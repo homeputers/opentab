@@ -1,0 +1,35 @@
+{
+  "name": "opentab-vscode",
+  "displayName": "OpenTab",
+  "description": "OpenTab syntax highlighting",
+  "version": "0.0.1",
+  "publisher": "opentab",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "opentab",
+        "aliases": [
+          "OpenTab",
+          "opentab"
+        ],
+        "extensions": [
+          ".otab"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "opentab",
+        "scopeName": "source.opentab",
+        "path": "./syntaxes/opentab.tmLanguage.json"
+      }
+    ]
+  }
+}

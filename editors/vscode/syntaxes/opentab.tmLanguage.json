@@ -1,0 +1,66 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "OpenTab",
+  "scopeName": "source.opentab",
+  "patterns": [
+    {
+      "name": "comment.line.number-sign.opentab",
+      "match": "#.*$"
+    },
+    {
+      "name": "meta.annotation.opentab",
+      "begin": "\\{",
+      "end": "\\}",
+      "patterns": [
+        {
+          "name": "variable.other.key.opentab",
+          "match": "\\b[a-zA-Z_][a-zA-Z0-9_-]*\\b"
+        },
+        {
+          "name": "keyword.operator.assignment.opentab",
+          "match": "="
+        },
+        {
+          "name": "punctuation.separator.opentab",
+          "match": ","
+        }
+      ]
+    },
+    {
+      "name": "meta.chord.opentab",
+      "begin": "\\[",
+      "end": "\\]",
+      "patterns": [
+        {
+          "include": "#note"
+        }
+      ]
+    },
+    {
+      "name": "meta.note.opentab",
+      "match": "\\([^)]*\\)"
+    },
+    {
+      "name": "keyword.control.opentab",
+      "match": "\\b(@track|voice)\\b"
+    },
+    {
+      "name": "keyword.control.opentab",
+      "match": "\\bm\\d+:"
+    },
+    {
+      "name": "constant.numeric.duration.opentab",
+      "match": "\\b[whqest](?:\\.|/\\d+)?\\b"
+    }
+  ],
+  "repository": {
+    "note": {
+      "patterns": [
+        {
+          "name": "meta.note.opentab",
+          "match": "\\([^)]*\\)"
+        }
+      ]
+    }
+  }
+}
