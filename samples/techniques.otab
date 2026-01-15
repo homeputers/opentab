@@ -1,0 +1,17 @@
+format="opentab"
+version="0.1"
+title="Techniques Example"
+tempo_bpm=92
+time_signature="4/4"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="electric_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+---
+@track gtr1 voice v1
+# Demonstrates: hammer-on, pull-off, slide up/down, vibrato, let_ring, palm mute
+m1: | e (3:2h4) e (2:3) e (3:4p2) e r q (1:3~) q r |
+m2: | e (3:5/7){let_ring=true} e (2:5){pm=true} e (2:5){pm=true} e (2:5){pm=true} q [ (4:2) (3:2) (2:3) ] q r |
+m3: | q (3:7\5) q (3:5) q (2:3) q (1:0) |

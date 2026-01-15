@@ -1,0 +1,16 @@
+format="opentab"
+version="0.1"
+title="Minimal Example"
+tempo_bpm=100
+time_signature="4/4"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="electric_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+capo=0
+---
+@track gtr1 voice v1
+m1: | q (6:3) q (5:5) q (4:5) q (3:3) |
+m2: | q (6:3) q (5:5) q (4:5) q (3:3) |

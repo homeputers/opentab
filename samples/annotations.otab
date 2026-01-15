@@ -1,0 +1,17 @@
+format="opentab"
+version="0.1"
+title="Annotations Example"
+tempo_bpm=110
+time_signature="4/4"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="electric_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+---
+@track gtr1 voice v1
+# Demonstrates structured annotations for techniques and performance notes
+m1: | q (6:0){pm=true} q (6:3){pm=true} q (6:5){pm=true} q (6:3){pm=true} |
+m2: | e (2:5){bend=2, text="full bend"} e (2:5){text="hold"} e (2:5){text="release"} e r q [ (4:2) (3:2) (2:3) ]{name="Dsus2"} q r |
+m3: | h r h (1:12){harmonic="natural", let_ring=true} |

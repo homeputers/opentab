@@ -1,0 +1,15 @@
+format="opentab"
+version="0.1"
+title="Tuplets (Triplets) Example"
+tempo_bpm=140
+time_signature="4/4"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="electric_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+---
+@track gtr1 voice v1
+# Four beats; each beat subdivided into triplet eighths: e/3 e/3 e/3
+m1: | e/3 (3:5) e/3 (3:7) e/3 (3:9)  e/3 (2:5) e/3 (2:7) e/3 (2:8)  e/3 (1:5) e/3 (1:7) e/3 (1:8)  e/3 (2:8) e/3 (2:7) e/3 (2:5) |

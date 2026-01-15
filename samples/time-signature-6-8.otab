@@ -1,0 +1,16 @@
+format="opentab"
+version="0.1"
+title="6/8 Groove Example"
+tempo_bpm=60
+time_signature="6/8"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="acoustic_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+---
+@track gtr1 voice v1
+# 6/8: six eighth notes per measure
+m1: | e [ (5:3) (4:2) (3:0) (2:1) (1:0) ] e r e [ (5:3) (4:2) (3:0) (2:1) (1:0) ] e r e [ (6:3) (5:3) (4:0) (3:0) (2:1) (1:3) ] |
+m2: | e [ (5:2) (4:0) (3:2) (2:3) (1:2) ] e r e [ (5:2) (4:0) (3:2) (2:3) (1:2) ] e r e [ (6:1) (5:3) (4:3) (3:2) (2:1) (1:1) ] |

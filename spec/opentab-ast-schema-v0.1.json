@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opentab.example/schema/opentab-ast-0.1.json",
+  "title": "OpenTab Canonical AST v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "header",
+    "tracks",
+    "measures"
+  ],
+  "properties": {
+    "format": {
+      "const": "opentab"
+    },
+    "version": {
+      "const": "0.1"
+    },
+    "header": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "artist": {
+          "type": "string"
+        },
+        "album": {
+          "type": "string"
+        },
+        "composer": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "copyright": {
+          "type": "string"
+        },
+        "tempo_bpm": {
+          "type": "number",
+          "minimum": 1
+        },
+        "time_signature": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "numerator",
+            "denominator"
+          ],
+          "properties": {
+            "numerator": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "denominator": {
+              "type": "integer",
+              "enum": [
+                1,
+                2,
+                4,
+                8,
+                16,
+                32
+              ]
+            }
+          }
+        },
+        "swing": {
+          "type": "string",
+          "enum": [
+            "none",
+            "eighth"
+          ]
+        }
+      }
+    },
+    "tracks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z_][A-Za-z0-9_\\-]*$"
+          },
+          "name": {
+            "type": "string"
+          },
+          "instrument": {
+            "type": "string"
+          },
+          "tuning": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-G](#|b)?[0-9]$"
+            },
+            "minItems": 1
+          },
+          "capo": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      }
+    },
+    "measures": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "index",
+          "tracks"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "tracks": {
+            "type": "object",
+            "additionalProperties": false,
+            "patternProperties": {
+              "^[A-Za-z_][A-Za-z0-9_\\-]*$": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "voices"
+                ],
+                "properties": {
+                  "voices": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "patternProperties": {
+                      "^[A-Za-z_][A-Za-z0-9_\\-]*$": {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/$defs/event"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "duration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base"
+      ],
+      "properties": {
+        "base": {
+          "type": "string",
+          "enum": [
+            "w",
+            "h",
+            "q",
+            "e",
+            "s",
+            "t"
+          ]
+        },
+        "dots": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 3,
+          "default": 0
+        },
+        "tuplet": {
+          "type": "integer",
+          "minimum": 2
+        }
+      }
+    },
+    "annotationValue": {
+      "oneOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "boolean"
+        }
+      ]
+    },
+    "annotations": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/annotationValue"
+      }
+    },
+    "noteRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "string",
+        "fret"
+      ],
+      "properties": {
+        "string": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fret": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "inlineTechniques": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/technique"
+          }
+        },
+        "annotations": {
+          "$ref": "#/$defs/annotations"
+        }
+      }
+    },
+    "technique": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "hammer_on",
+            "pull_off",
+            "slide",
+            "vibrato"
+          ]
+        },
+        "fromFret": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "toFret": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "direction": {
+          "type": "string",
+          "enum": [
+            "up",
+            "down"
+          ]
+        }
+      }
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "duration"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "note",
+            "chord",
+            "rest"
+          ]
+        },
+        "duration": {
+          "$ref": "#/$defs/duration"
+        },
+        "note": {
+          "$ref": "#/$defs/noteRef"
+        },
+        "chord": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/noteRef"
+          }
+        },
+        "annotations": {
+          "$ref": "#/$defs/annotations"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "note"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "note"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "chord"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "chord"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "rest"
+              }
+            }
+          },
+          "then": {}
+        }
+      ]
+    }
+  }
+}
