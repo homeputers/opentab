@@ -1,3 +1,14 @@
+<p align="center">
+  <img src="logofull.png" alt="OpenTab logo" />
+</p>
+
+<p align="center">
+  <!-- Badge URL placeholders (replace when available). -->
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" /></a>
+  <a href="editors/vscode"><img alt="VS Code Marketplace" src="https://img.shields.io/badge/VS%20Code-extension-orange.svg" /></a>
+  <a href="docs"><img alt="Docs" src="https://img.shields.io/badge/docs-coming%20soon-lightgrey.svg" /></a>
+</p>
+
 # OpenTab 🎸
 
 OpenTab is an **open, text-based, computer-friendly format for guitar tablature**.
@@ -66,6 +77,14 @@ m2: | e (3:2h4) (2:3) q [ (4:2) (3:2) (2:3) ] q r |
 
 ---
 
+## Quick start
+
+- Open any `.otab` sample in [samples/](samples/) with your editor of choice.
+- Read the specification in [spec/](spec/).
+- Visit the docs site: [OpenTab docs](DOCS_SITE_PLACEHOLDER).
+
+---
+
 ## Repository structure
 
 ```
@@ -77,6 +96,16 @@ opentab/
 ├── docs/        # Documentation website
 └── README.md
 ```
+
+---
+
+## Brand assets
+
+<p>
+  <img src="iconfull.png" alt="OpenTab icon preview" width="192" />
+</p>
+
+`icon128x128.png` is used for the VS Code extension icon and the docs favicon.
 
 ---
 
