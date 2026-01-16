@@ -39,6 +39,9 @@ When modifying or generating content:
 - Keep samples small and focused
 - Each sample should demonstrate one concept clearly
 
+### Git guidelines
+- Use conventional commits when adding changes
+
 ---
 
 ## Parsing rules (high-level)
