@@ -131,6 +131,53 @@ pre {
   margin-top: 2.5rem;
 }
 
+.try-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 1.5rem;
+}
+
+.try-textarea {
+  width: 100%;
+  padding: 1rem;
+  font-family: "JetBrains Mono", "SFMono-Regular", ui-monospace, monospace;
+  font-size: 0.9rem;
+  border-radius: 12px;
+  border: 1px solid #d6dbe8;
+  background: #fdfdff;
+  color: inherit;
+  resize: vertical;
+}
+
+.summary-list {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0 0;
+}
+
+.summary-list dt {
+  font-weight: 600;
+  color: #2a2f3a;
+}
+
+.summary-list dd {
+  margin: 0.25rem 0 0;
+  font-size: 1.5rem;
+}
+
+.error-list {
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+  color: #b42318;
+}
+
+.error-empty {
+  margin-top: 1rem;
+  color: #1a7f37;
+  font-weight: 500;
+}
+
 .table-list {
   list-style: none;
   padding: 0;

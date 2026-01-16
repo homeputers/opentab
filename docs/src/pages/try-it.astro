@@ -1,0 +1,174 @@
+---
+import Layout from '../components/Layout.astro';
+
+const sample = `format="opentab"
+version="0.1"
+title="Minimal Example"
+tempo_bpm=100
+time_signature="4/4"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="electric_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+capo=0
+---
+@track gtr1 voice v1
+m1: | q (6:3) q (5:5) q (4:5) q (3:3) |
+m2: | q (6:3) q (5:5) q (4:5) q (3:3) |`;
+---
+
+<Layout title="Try It">
+  <h1 class="page-title">Try OpenTab</h1>
+  <p>Paste an <code>.otab</code> snippet to preview a quick summary and ASCII render.</p>
+
+  <section class="try-grid">
+    <div class="card">
+      <h2>Input</h2>
+      <textarea id="otab-input" class="try-textarea" rows="18">{sample}</textarea>
+    </div>
+    <div class="card">
+      <h2>Parsed summary</h2>
+      <dl class="summary-list">
+        <div>
+          <dt>Tracks</dt>
+          <dd id="summary-tracks">0</dd>
+        </div>
+        <div>
+          <dt>Measures</dt>
+          <dd id="summary-measures">0</dd>
+        </div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="card">
+      <h2>ASCII tab</h2>
+      <pre><code id="ascii-output"></code></pre>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="card">
+      <h2>Validation errors</h2>
+      <ul id="error-list" class="error-list"></ul>
+      <p id="error-empty" class="error-empty">No validation issues found.</p>
+    </div>
+  </section>
+
+  <script type="module">
+    const input = document.getElementById('otab-input');
+    const summaryTracks = document.getElementById('summary-tracks');
+    const summaryMeasures = document.getElementById('summary-measures');
+    const asciiOutput = document.getElementById('ascii-output');
+    const errorList = document.getElementById('error-list');
+    const errorEmpty = document.getElementById('error-empty');
+
+    const defaultTuning = ['E4', 'B3', 'G3', 'D3', 'A2', 'E2'];
+
+    const parseTuning = (headerLines) => {
+      const tuningLine = headerLines.find((line) => line.trim().startsWith('tuning'));
+      if (!tuningLine) return null;
+      const match = tuningLine.match(/\[(.*)\]/);
+      if (!match) return null;
+      return match[1]
+        .split(',')
+        .map((entry) => entry.trim().replace(/^"|"$/g, ''))
+        .filter(Boolean);
+    };
+
+    const appendSlot = (lines, targetIndex, fret) => {
+      const width = fret.length + 2;
+      lines.forEach((_, index) => {
+        const segment = index === targetIndex
+          ? `-${fret}-`
+          : '-'.repeat(width);
+        lines[index] += segment;
+      });
+    };
+
+    const renderAsciiTab = (bodyLines, tuning) => {
+      const stringCount = tuning?.length ?? 6;
+      const labels = [];
+      for (let stringNumber = stringCount; stringNumber >= 1; stringNumber -= 1) {
+        const label = tuning?.[stringNumber - 1] ?? `S${stringNumber}`;
+        labels.push(label.padEnd(3, ' '));
+      }
+
+      const lines = labels.map((label) => `${label}|`);
+      const matches = bodyLines.flatMap((line) => Array.from(line.matchAll(/\((\d+):(\d+)\)/g)));
+
+      if (matches.length === 0) {
+        return lines.map((line) => `${line}-`).join('\n');
+      }
+
+      matches.forEach((match) => {
+        const stringNumber = Number(match[1]);
+        const fret = match[2];
+        const targetIndex = (stringCount - stringNumber);
+        if (targetIndex < 0 || targetIndex >= lines.length) {
+          appendSlot(lines, -1, fret);
+          return;
+        }
+        appendSlot(lines, targetIndex, fret);
+      });
+
+      return lines.join('\n');
+    };
+
+    const parseOtab = (text) => {
+      const lines = text.split(/\r?\n/);
+      const dividerIndex = lines.findIndex((line) => line.trim() === '---');
+      const headerLines = dividerIndex === -1 ? lines : lines.slice(0, dividerIndex);
+      const bodyLines = dividerIndex === -1 ? [] : lines.slice(dividerIndex + 1);
+      const headerText = headerLines.join('\n');
+      const bodyText = bodyLines.join('\n');
+
+      const errors = [];
+      if (dividerIndex === -1) {
+        errors.push('Missing "---" separator between header and body.');
+      }
+
+      const hasFormat = /format\s*=\s*"?opentab"?/i.test(headerText);
+      const hasVersion = /version\s*=\s*"?0\.1"?/i.test(headerText);
+
+      if (!hasFormat) errors.push('Missing required header field: format = "opentab".');
+      if (!hasVersion) errors.push('Missing required header field: version = "0.1".');
+
+      const trackCount = headerLines.filter((line) => line.trim() === '[[tracks]]').length;
+      if (trackCount === 0) errors.push('No [[tracks]] entries found in header.');
+
+      const measureMatches = bodyText.match(/m\d+:/g) ?? [];
+      const fallbackMeasures = bodyLines.filter((line) => line.includes('|')).length;
+      const measureCount = measureMatches.length || fallbackMeasures;
+      if (dividerIndex !== -1 && bodyText.trim() && measureCount === 0) {
+        errors.push('No measure lines detected in body.');
+      }
+
+      const tuning = parseTuning(headerLines);
+      const ascii = renderAsciiTab(bodyLines, tuning ?? defaultTuning);
+
+      return { trackCount, measureCount, ascii, errors };
+    };
+
+    const render = () => {
+      const { trackCount, measureCount, ascii, errors } = parseOtab(input.value);
+      summaryTracks.textContent = String(trackCount);
+      summaryMeasures.textContent = String(measureCount);
+      asciiOutput.textContent = ascii;
+
+      errorList.innerHTML = '';
+      errors.forEach((error) => {
+        const item = document.createElement('li');
+        item.textContent = error;
+        errorList.appendChild(item);
+      });
+      errorEmpty.hidden = errors.length > 0;
+    };
+
+    input.addEventListener('input', render);
+    render();
+  </script>
+</Layout>
