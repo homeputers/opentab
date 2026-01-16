@@ -26,5 +26,59 @@ const base = import.meta.env.BASE_URL ?? '/';
     <main class="container">
       <slot />
     </main>
+    <script type="module">
+      const ensureCopyButtons = () => {
+        document.querySelectorAll("pre").forEach((pre) => {
+          if (pre.parentElement?.classList.contains("code-block")) {
+            return;
+          }
+
+          const wrapper = document.createElement("div");
+          wrapper.className = "code-block";
+
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "copy-button";
+          button.setAttribute("aria-label", "Copy code to clipboard");
+          button.textContent = "Copy";
+
+          const updateButton = (label) => {
+            button.textContent = label;
+            button.classList.toggle("copied", label === "Copied");
+          };
+
+          button.addEventListener("click", async () => {
+            const code = pre.querySelector("code")?.innerText ?? pre.innerText;
+            try {
+              await navigator.clipboard.writeText(code);
+              updateButton("Copied");
+            } catch (error) {
+              const textarea = document.createElement("textarea");
+              textarea.value = code;
+              textarea.setAttribute("readonly", "true");
+              textarea.style.position = "absolute";
+              textarea.style.left = "-9999px";
+              document.body.appendChild(textarea);
+              textarea.select();
+              document.execCommand("copy");
+              document.body.removeChild(textarea);
+              updateButton("Copied");
+            }
+
+            window.setTimeout(() => updateButton("Copy"), 2000);
+          });
+
+          pre.parentNode?.insertBefore(wrapper, pre);
+          wrapper.appendChild(pre);
+          wrapper.appendChild(button);
+        });
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", ensureCopyButtons);
+      } else {
+        ensureCopyButtons();
+      }
+    </script>
   </body>
 </html>
