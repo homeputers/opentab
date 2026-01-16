@@ -1,0 +1,29 @@
+name: Build VS Code Extension
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - "editors/vscode/**"
+
+jobs:
+  build:
+    if: github.base_ref == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: editors/vscode
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install vsce
+        run: npm install --global @vscode/vsce
+
+      - name: Package extension
+        run: vsce package
