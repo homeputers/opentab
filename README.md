@@ -6,9 +6,9 @@
 
 <p align="center">
   <!-- Badge URL placeholders (replace when available). -->
-  <a href="LINK_PLACEHOLDER_LICENSE"><img alt="License: MIT" src="BADGE_PLACEHOLDER_LICENSE" /></a>
-  <a href="LINK_PLACEHOLDER_VSCODE"><img alt="VS Code Marketplace" src="BADGE_PLACEHOLDER_VSCODE" /></a>
-  <a href="LINK_PLACEHOLDER_DOCS"><img alt="Docs" src="BADGE_PLACEHOLDER_DOCS" /></a>
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" /></a>
+  <a href="editors/vscode"><img alt="VS Code Marketplace" src="https://img.shields.io/badge/VS%20Code-extension-orange.svg" /></a>
+  <a href="docs"><img alt="Docs" src="https://img.shields.io/badge/docs-coming%20soon-lightgrey.svg" /></a>
 </p>
 
 OpenTab is an **open, text-based, computer-friendly format for guitar tablature**.
