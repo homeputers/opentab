@@ -5,8 +5,8 @@
 <p align="center">
   <!-- Badge URL placeholders (replace when available). -->
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-blue.svg" /></a>
-  <a href="editors/vscode"><img alt="VS Code Marketplace" src="https://img.shields.io/badge/VS%20Code-extension-orange.svg" /></a>
-  <a href="docs"><img alt="Docs" src="https://img.shields.io/badge/docs-coming%20soon-lightgrey.svg" /></a>
+  <a href="https://marketplace.visualstudio.com/items?itemName=Homeputers.opentab-vscode"><img alt="VS Code Marketplace" src="https://img.shields.io/visual-studio-marketplace/v/Homeputers.opentab-vscode" /></a>
+  <a href="https://homeputers.com/opentab/"><img alt="Docs" src="https://img.shields.io/badge/docs-online-brightgreen.svg" /></a>
 </p>
 
 # OpenTab 🎸
