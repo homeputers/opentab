@@ -4,12 +4,19 @@
   "description": "OpenTab syntax highlighting",
   "version": "0.0.1",
   "publisher": "opentab",
+  "main": "./src/extension.js",
+  "activationEvents": [
+    "onLanguage:opentab"
+  ],
   "engines": {
     "vscode": "^1.80.0"
   },
   "categories": [
     "Programming Languages"
   ],
+  "scripts": {
+    "test": "node ./tests/validator.test.js"
+  },
   "contributes": {
     "languages": [
       {
