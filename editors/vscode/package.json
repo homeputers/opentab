@@ -18,6 +18,12 @@
     "test": "node ./tests/validator.test.js"
   },
   "contributes": {
+    "commands": [
+      {
+        "command": "opentab.formatDocument",
+        "title": "OpenTab: Format Document"
+      }
+    ],
     "languages": [
       {
         "id": "opentab",

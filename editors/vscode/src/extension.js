@@ -15,7 +15,30 @@ function activate(context) {
     diagnostics.delete(document.uri);
   });
 
-  context.subscriptions.push(diagnostics, saveDisposable, closeDisposable);
+  const formatProvider = vscode.languages.registerDocumentFormattingEditProvider(
+    'opentab',
+    {
+      provideDocumentFormattingEdits(document) {
+        const lastLine = Math.max(document.lineCount - 1, 0);
+        const lastLineText = document.lineAt(lastLine).text;
+        const fullRange = new vscode.Range(0, 0, lastLine, lastLineText.length);
+        return [vscode.TextEdit.replace(fullRange, formatText(document))];
+      },
+    },
+  );
+
+  const formatCommand = vscode.commands.registerCommand(
+    'opentab.formatDocument',
+    () => vscode.commands.executeCommand('editor.action.formatDocument'),
+  );
+
+  context.subscriptions.push(
+    diagnostics,
+    saveDisposable,
+    closeDisposable,
+    formatProvider,
+    formatCommand,
+  );
 }
 
 function updateDiagnostics(document, diagnostics) {
@@ -35,6 +58,70 @@ function updateDiagnostics(document, diagnostics) {
   });
 
   diagnostics.set(document.uri, vscodeDiagnostics);
+}
+
+function formatText(document) {
+  const eol = document.eol === vscode.EndOfLine.LF ? '\n' : '\r\n';
+  const lines = document.getText().split(/\r?\n/);
+  const formattedLines = [];
+
+  for (const line of lines) {
+    formattedLines.push(formatLine(line));
+  }
+
+  const normalizedLines = [];
+  for (const line of formattedLines) {
+    if (line.trim() === '---') {
+      while (
+        normalizedLines.length > 0 &&
+        normalizedLines[normalizedLines.length - 1].trim() === ''
+      ) {
+        normalizedLines.pop();
+      }
+      if (normalizedLines.length > 0) {
+        normalizedLines.push('');
+      }
+      normalizedLines.push('---');
+      continue;
+    }
+    normalizedLines.push(line);
+  }
+
+  return normalizedLines.join(eol);
+}
+
+function formatLine(line) {
+  const trimmedEnd = line.replace(/\s+$/, '');
+  if (trimmedEnd.trim().startsWith('#')) {
+    return trimmedEnd;
+  }
+
+  const commentIndex = trimmedEnd.indexOf('#');
+  const hasInlineComment = commentIndex > -1;
+  const codePart = hasInlineComment
+    ? trimmedEnd.slice(0, commentIndex)
+    : trimmedEnd;
+  const commentPart = hasInlineComment ? trimmedEnd.slice(commentIndex) : '';
+
+  const formattedCode = formatMeasureLine(codePart);
+  if (commentPart) {
+    const spacer = formattedCode.length > 0 ? ' ' : '';
+    return `${formattedCode}${spacer}${commentPart}`.replace(/\s+$/, '');
+  }
+  return formattedCode;
+}
+
+function formatMeasureLine(line) {
+  const match = line.match(/^\s*(m\d+)\s*:\s*\|\s*(.*?)\s*\|\s*$/);
+  if (!match) {
+    return line.replace(/\s+$/, '');
+  }
+
+  const tokens = match[2].trim().split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) {
+    return `${match[1]}: | |`;
+  }
+  return `${match[1]}: | ${tokens.join(' ')} |`;
 }
 
 function deactivate() {}
