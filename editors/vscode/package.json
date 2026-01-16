@@ -3,7 +3,7 @@
   "displayName": "OpenTab",
   "description": "OpenTab syntax highlighting",
   "version": "0.0.1",
-  "publisher": "opentab",
+  "publisher": "Homeputers",
   "main": "./src/extension.js",
   "activationEvents": [
     "onLanguage:opentab"
