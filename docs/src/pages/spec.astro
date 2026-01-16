@@ -1,0 +1,15 @@
+---
+import { readFile } from 'node:fs/promises';
+import { marked } from 'marked';
+import Layout from '../components/Layout.astro';
+
+const specMarkdown = await readFile(new URL('../../../spec/opentab-v0.1.md', import.meta.url), 'utf-8');
+const specHtml = marked(specMarkdown);
+---
+
+<Layout title="Spec">
+  <h1 class="page-title">OpenTab Spec v0.1</h1>
+  <div class="card">
+    <div set:html={specHtml} />
+  </div>
+</Layout>
