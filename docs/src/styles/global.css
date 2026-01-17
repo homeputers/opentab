@@ -50,6 +50,15 @@ a:hover {
   font-weight: 700;
   font-size: 1.25rem;
   color: #e2e8f0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.logo-image {
+  display: block;
+  height: 32px;
+  width: auto;
+  max-width: 180px;
 }
 
 .nav {
