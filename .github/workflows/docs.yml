@@ -38,7 +38,7 @@ jobs:
         run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
-          SITE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          SITE: https://homeputers.com/opentab
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
