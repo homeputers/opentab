@@ -1,0 +1,22 @@
+{
+  "name": "opentab",
+  "version": "0.0.1",
+  "type": "module",
+  "bin": {
+    "opentab": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "test": "vitest run",
+    "lint": "echo 'No lint configured'",
+    "clean": "rm -rf dist"
+  }
+}
