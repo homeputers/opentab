@@ -7,11 +7,19 @@ tempo 100
 
 time 4/4
 | 0-2-3-2 | 0-0-0-0 |`;
+const base = import.meta.env.BASE_URL ?? '/';
 ---
 
 <Layout title="Home">
   <section class="hero">
     <div>
+      <img
+        class="hero-logo"
+        src={`${base}logofull.png`}
+        alt="OpenTab logo"
+        loading="eager"
+        decoding="async"
+      />
       <h1 class="page-title">OpenTab</h1>
       <p>
         OpenTab is an open, minimal, and deterministic format for guitar tab data. It prioritizes
