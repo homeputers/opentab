@@ -4,9 +4,10 @@ import path from 'node:path';
 import Layout from '../components/Layout.astro';
 
 const samplesDir = new URL('../../../samples/', import.meta.url);
-const sampleFiles = (await readdir(samplesDir))
-  .filter((name) => name.endsWith('.otab'))
-  .sort();
+const sampleFiles = (await readdir(samplesDir, { withFileTypes: true }))
+  .filter((entry) => entry.isFile())
+  .map((entry) => entry.name)
+  .sort((a, b) => a.localeCompare(b));
 
 const samples = await Promise.all(
   sampleFiles.map(async (file) => {
