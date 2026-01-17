@@ -1,0 +1,7 @@
+packages:
+  - "ast"
+  - "parser"
+  - "formatter"
+  - "converters-ascii"
+  - "converters-midi"
+  - "opentab"
