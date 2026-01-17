@@ -1,12 +1,12 @@
 ---
 import Layout from '../components/Layout.astro';
 
-const example = `title "Warmup"
+const example = `title "Quick Riff"
 tuning "EADGBE"
-tempo 100
+tempo 120
 
 time 4/4
-| 0-2-3-2 | 0-0-0-0 |`;
+| 0-2-3-2 | 3-2-0-0 |`;
 ---
 
 <Layout title="Home">
@@ -14,10 +14,13 @@ time 4/4
     <div>
       <h1 class="page-title">OpenTab</h1>
       <p>
-        OpenTab is an open, minimal, and deterministic format for guitar tab data. It prioritizes
-        explicit musical semantics so that tools can preserve musical intent across time and
-        platforms.
+        OpenTab is a minimal, deterministic format for guitar tab data that keeps musical intent
+        explicit and portable across tools and time.
       </p>
+      <div class="links">
+        <a href="/spec">Read the Spec</a>
+        <a href="/examples">Browse Examples</a>
+      </div>
     </div>
     <div class="card">
       <h2>Short example</h2>
