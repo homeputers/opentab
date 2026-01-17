@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import Ajv from "ajv";
+import Ajv, { type AnySchema } from "ajv";
 
 export const packageName = "@opentab/ast";
 
@@ -130,7 +130,7 @@ export function validateAst(document: unknown): {
 } {
   if (!cachedValidator) {
     const ajv = new Ajv({ allErrors: true, strict: false });
-    cachedValidator = ajv.compile(loadSchema());
+    cachedValidator = ajv.compile(loadSchema() as AnySchema);
   }
 
   const ok = cachedValidator(document) as boolean;
