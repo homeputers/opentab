@@ -24,7 +24,7 @@ npm run preview -- --host 0.0.0.0 --port 4321
 The GitHub Pages site is built and deployed by `.github/workflows/docs.yml`.
 
 - The workflow runs on pushes to `main` that touch `docs/**`, `spec/**`, or `samples/**`.
-- It installs dependencies, then builds the site with `BASE_PATH=/<repo-name>/` and `SITE=https://<owner>.github.io/<repo-name>`.
+- It installs dependencies, then builds the site with `BASE_PATH=/<repo-name>/` and `SITE=https://homeputers.com/opentab`.
 - The static output in `docs/dist` is uploaded and deployed via GitHub Pages.
 
-If you need to test Pages routing locally, set `BASE_PATH=/<repo-name>/` and `SITE=https://<owner>.github.io/<repo-name>` before running `npm run dev` or `npm run build`.
+If you need to test Pages routing locally, set `BASE_PATH=/<repo-name>/` and `SITE=https://homeputers.com/opentab` before running `npm run dev` or `npm run build`.
