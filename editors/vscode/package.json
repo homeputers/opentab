@@ -1,19 +1,36 @@
 {
   "name": "opentab-vscode",
-  "displayName": "OpenTab Tablature",
-  "description": "OpenTab syntax highlighting",
+  "displayName": "OpenTab Tablature Language",
+  "description": "Syntax highlighting and formatting support for OpenTab tablature files.",
   "version": "0.0.1",
   "publisher": "Homeputers",
+  "icon": "icon.ico",
+  "keywords": [
+    "opentab",
+    "tablature",
+    "guitar",
+    "music",
+    "chordpro",
+    "guitarpro"
+  ],
+  "categories": [
+    "Languages"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/homeputers/opentab"
+  },
+  "homepage": "https://github.com/homeputers/opentab",
+  "bugs": {
+    "url": "https://github.com/homeputers/opentab/issues"
+  },
   "main": "./src/extension.js",
   "activationEvents": [
     "onLanguage:opentab"
   ],
   "engines": {
-    "vscode": "^1.80.0"
+    "vscode": "^1.75.0"
   },
-  "categories": [
-    "Programming Languages"
-  ],
   "scripts": {
     "test": "node ./tests/validator.test.js"
   },
