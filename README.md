@@ -80,8 +80,16 @@ m2: | e (3:2h4) (2:3) q [ (4:2) (3:2) (2:3) ] q r |
 ## Quick start
 
 - Open any `.otab` sample in [samples/](samples/) with your editor of choice.
-- Read the specification in [spec/](spec/).
-- Visit the docs site: [OpenTab docs](DOCS_SITE_PLACEHOLDER).
+- Read the specification in [spec/opentab-spec-v0.1.md](spec/opentab-spec-v0.1.md).
+- Explore the VS Code extension source in [editors/vscode/](editors/vscode/).
+- Visit the docs site: [OpenTab docs](https://homeputers.com/opentab/).
+
+## Project links
+
+- Specification: [spec/opentab-spec-v0.1.md](spec/opentab-spec-v0.1.md)
+- Documentation site: [https://homeputers.com/opentab/](https://homeputers.com/opentab/)
+- VS Code extension: [editors/vscode/](editors/vscode/)
+- Samples: [samples/](samples/)
 
 ---
 
