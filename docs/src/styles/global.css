@@ -52,13 +52,12 @@ a:hover {
   color: #e2e8f0;
   display: inline-flex;
   align-items: center;
-}
-
-.logo-image {
-  display: block;
-  height: 32px;
-  width: auto;
-  max-width: 180px;
+  height: 44px;
+  width: 200px;
+  background-image: var(--logo-url);
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: left center;
 }
 
 .nav {
@@ -73,12 +72,6 @@ a:hover {
   gap: 1.5rem;
 }
 
-.hero-logo {
-  display: block;
-  max-width: min(320px, 80%);
-  height: auto;
-  margin-bottom: 1rem;
-}
 
 .card {
   background: #111827;

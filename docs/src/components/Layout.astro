@@ -15,9 +15,12 @@ const base = import.meta.env.BASE_URL ?? '/';
   <body>
     <header class="site-header">
       <div class="container">
-        <a class="logo" href={base} aria-label="OpenTab home">
-          <img src={`${base}logofull.png`} alt="OpenTab logo" class="logo-image" />
-        </a>
+        <a
+          class="logo"
+          href={base}
+          aria-label="OpenTab home"
+          style={`--logo-url: url('${base}logofull.png')`}
+        ></a>
         <nav class="nav">
           <a href={`${base}spec`}>Spec</a>
           <a href={`${base}examples`}>Examples</a>
