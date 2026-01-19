@@ -1,1 +1,108 @@
-export const packageName = "opentab";
+#!/usr/bin/env node
+
+import fs from "node:fs/promises";
+import path from "node:path";
+
+import { Command } from "commander";
+
+import { toAsciiTab } from "@opentab/converters-ascii";
+import { toMidi } from "@opentab/converters-midi";
+import { formatOtab } from "@opentab/formatter";
+import { parseOpenTab } from "@opentab/parser";
+
+const program = new Command();
+
+const formatError = (error: unknown): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return String(error);
+};
+
+const readSource = async (filePath: string): Promise<string> =>
+  fs.readFile(filePath, "utf8");
+
+const writeStdout = (value: string): void => {
+  process.stdout.write(value.endsWith("\n") ? value : `${value}\n`);
+};
+
+const writeErrorAndExit = (message: string): never => {
+  process.stderr.write(`${message}\n`);
+  process.exit(1);
+};
+
+program
+  .name("opentab")
+  .description("OpenTab command line tools")
+  .version("0.0.1");
+
+program
+  .command("parse")
+  .description("Parse an OpenTab file and print the AST JSON")
+  .argument("<file>", "OpenTab file")
+  .option("--json", "Output JSON (default)")
+  .action(async (filePath: string) => {
+    try {
+      const source = await readSource(filePath);
+      const document = parseOpenTab(source);
+      writeStdout(JSON.stringify(document, null, 2));
+    } catch (error) {
+      writeErrorAndExit(`Parse failed: ${formatError(error)}`);
+    }
+  });
+
+program
+  .command("fmt")
+  .description("Format an OpenTab file")
+  .argument("<file>", "OpenTab file")
+  .option("--write", "Overwrite the file with formatted output")
+  .action(async (filePath: string, options: { write?: boolean }) => {
+    try {
+      const source = await readSource(filePath);
+      const formatted = formatOtab(source);
+      if (options.write) {
+        await fs.writeFile(filePath, formatted, "utf8");
+      } else {
+        writeStdout(formatted);
+      }
+    } catch (error) {
+      writeErrorAndExit(`Format failed: ${formatError(error)}`);
+    }
+  });
+
+const toCommand = program.command("to").description("Convert OpenTab files");
+
+toCommand
+  .command("ascii")
+  .description("Render ASCII tablature")
+  .argument("<file>", "OpenTab file")
+  .action(async (filePath: string) => {
+    try {
+      const source = await readSource(filePath);
+      const document = parseOpenTab(source);
+      writeStdout(toAsciiTab(document));
+    } catch (error) {
+      writeErrorAndExit(`ASCII conversion failed: ${formatError(error)}`);
+    }
+  });
+
+toCommand
+  .command("midi")
+  .description("Render MIDI from an OpenTab file")
+  .argument("<file>", "OpenTab file")
+  .requiredOption("-o, --output <file>", "Output MIDI file path")
+  .action(async (filePath: string, options: { output: string }) => {
+    try {
+      const source = await readSource(filePath);
+      const document = parseOpenTab(source);
+      const midiData = toMidi(document);
+      const outputPath = path.resolve(options.output);
+      await fs.writeFile(outputPath, Buffer.from(midiData));
+    } catch (error) {
+      writeErrorAndExit(`MIDI conversion failed: ${formatError(error)}`);
+    }
+  });
+
+program.parseAsync(process.argv).catch((error) => {
+  writeErrorAndExit(`Command failed: ${formatError(error)}`);
+});

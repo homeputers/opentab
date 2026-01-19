@@ -13,6 +13,16 @@
       "default": "./dist/index.js"
     }
   },
+  "dependencies": {
+    "@opentab/converters-ascii": "workspace:*",
+    "@opentab/converters-midi": "workspace:*",
+    "@opentab/formatter": "workspace:*",
+    "@opentab/parser": "workspace:*",
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "test": "vitest run --passWithNoTests",
