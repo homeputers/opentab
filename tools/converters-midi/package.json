@@ -10,6 +10,13 @@
       "default": "./dist/index.js"
     }
   },
+  "dependencies": {
+    "@opentab/ast": "workspace:*",
+    "midi-file": "^1.2.4"
+  },
+  "devDependencies": {
+    "@opentab/parser": "workspace:*"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "test": "vitest run --passWithNoTests",
