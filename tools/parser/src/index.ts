@@ -70,10 +70,23 @@ function parseTomlValue(raw: string): unknown {
   return trimmed;
 }
 
+function buildTrack(candidate: Partial<Track>): Track {
+  if (!candidate.id) {
+    throw new OpenTabParseError("Track definition missing id");
+  }
+  return {
+    id: candidate.id,
+    name: candidate.name,
+    instrument: candidate.instrument,
+    tuning: candidate.tuning,
+    capo: candidate.capo,
+  };
+}
+
 function parseHeader(lines: string[]): ParsedHeader {
   const header: Record<string, unknown> = {};
   const tracks: Track[] = [];
-  let currentTrack: Record<string, unknown> | null = null;
+  let currentTrack: Partial<Track> | null = null;
   let format: string | undefined;
   let version: string | undefined;
 
@@ -85,7 +98,7 @@ function parseHeader(lines: string[]): ParsedHeader {
 
     if (line === "[[tracks]]") {
       if (currentTrack) {
-        tracks.push(currentTrack as Track);
+        tracks.push(buildTrack(currentTrack));
       }
       currentTrack = {};
       continue;
@@ -99,7 +112,19 @@ function parseHeader(lines: string[]): ParsedHeader {
     const value = parseTomlValue(valueRaw);
 
     if (currentTrack) {
-      currentTrack[key] = value;
+      if (key === "id") {
+        currentTrack.id = String(value);
+      } else if (key === "name") {
+        currentTrack.name = String(value);
+      } else if (key === "instrument") {
+        currentTrack.instrument = String(value);
+      } else if (key === "tuning") {
+        currentTrack.tuning = Array.isArray(value)
+          ? value.map((item) => String(item))
+          : undefined;
+      } else if (key === "capo") {
+        currentTrack.capo = Number(value);
+      }
       continue;
     }
 
@@ -113,7 +138,7 @@ function parseHeader(lines: string[]): ParsedHeader {
   }
 
   if (currentTrack) {
-    tracks.push(currentTrack as Track);
+    tracks.push(buildTrack(currentTrack));
   }
 
   return { format, version, header, tracks };
