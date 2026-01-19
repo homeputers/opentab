@@ -10,6 +10,23 @@ import { parseOpenTab } from "./index.js";
 const currentDir = path.dirname(fileURLToPath(import.meta.url));
 const samplesDir = path.resolve(currentDir, "../../../samples");
 
+const sortObject = (value: unknown): unknown => {
+  if (Array.isArray(value)) {
+    return value.map((entry) => sortObject(entry));
+  }
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>).sort(
+      ([left], [right]) => left.localeCompare(right)
+    );
+    const sorted: Record<string, unknown> = {};
+    for (const [key, entryValue] of entries) {
+      sorted[key] = sortObject(entryValue);
+    }
+    return sorted;
+  }
+  return value;
+};
+
 describe("parseOpenTab samples", () => {
   const sampleFiles = fs
     .readdirSync(samplesDir)
@@ -26,35 +43,19 @@ describe("parseOpenTab samples", () => {
   it("matches the AST snapshot for minimal.otab", () => {
     const source = fs.readFileSync(path.join(samplesDir, "minimal.otab"), "utf8");
     const document = parseOpenTab(source);
+    const snapshot = JSON.stringify(sortObject(document), null, 2);
 
-    expect(document).toMatchInlineSnapshot(`
+    expect(snapshot).toMatchInlineSnapshot(`
       {
         "format": "opentab",
-        "version": "0.1",
         "header": {
-          "title": "Minimal Example",
           "tempo_bpm": 100,
           "time_signature": {
-            "numerator": 4,
             "denominator": 4,
+            "numerator": 4
           },
+          "title": "Minimal Example"
         },
-        "tracks": [
-          {
-            "id": "gtr1",
-            "name": "Guitar",
-            "instrument": "electric_guitar",
-            "tuning": [
-              "E2",
-              "A2",
-              "D3",
-              "G3",
-              "B3",
-              "E4",
-            ],
-            "capo": 0,
-          },
-        ],
         "measures": [
           {
             "index": 1,
@@ -63,44 +64,44 @@ describe("parseOpenTab samples", () => {
                 "voices": {
                   "v1": [
                     {
-                      "type": "note",
                       "duration": {
-                        "base": "q",
+                        "base": "q"
                       },
                       "note": {
-                        "string": 6,
                         "fret": 3,
+                        "string": 6
                       },
+                      "type": "note"
                     },
                     {
-                      "type": "note",
                       "duration": {
-                        "base": "q",
+                        "base": "q"
                       },
                       "note": {
-                        "string": 5,
                         "fret": 5,
+                        "string": 5
                       },
+                      "type": "note"
                     },
                     {
-                      "type": "note",
                       "duration": {
-                        "base": "q",
+                        "base": "q"
                       },
                       "note": {
-                        "string": 4,
                         "fret": 5,
+                        "string": 4
                       },
+                      "type": "note"
                     },
                     {
-                      "type": "note",
                       "duration": {
-                        "base": "q",
+                        "base": "q"
                       },
                       "note": {
-                        "string": 3,
                         "fret": 3,
+                        "string": 3
                       },
+                      "type": "note"
                     },
                   ],
                 },
@@ -114,44 +115,44 @@ describe("parseOpenTab samples", () => {
                 "voices": {
                   "v1": [
                     {
-                      "type": "note",
                       "duration": {
-                        "base": "q",
+                        "base": "q"
                       },
                       "note": {
-                        "string": 6,
                         "fret": 3,
+                        "string": 6
                       },
+                      "type": "note"
                     },
                     {
-                      "type": "note",
                       "duration": {
-                        "base": "q",
+                        "base": "q"
                       },
                       "note": {
-                        "string": 5,
                         "fret": 5,
+                        "string": 5
                       },
+                      "type": "note"
                     },
                     {
-                      "type": "note",
                       "duration": {
-                        "base": "q",
+                        "base": "q"
                       },
                       "note": {
-                        "string": 4,
                         "fret": 5,
+                        "string": 4
                       },
+                      "type": "note"
                     },
                     {
-                      "type": "note",
                       "duration": {
-                        "base": "q",
+                        "base": "q"
                       },
                       "note": {
-                        "string": 3,
                         "fret": 3,
+                        "string": 3
                       },
+                      "type": "note"
                     },
                   ],
                 },
@@ -159,6 +160,23 @@ describe("parseOpenTab samples", () => {
             },
           },
         ],
+        "tracks": [
+          {
+            "capo": 0,
+            "id": "gtr1",
+            "instrument": "electric_guitar",
+            "name": "Guitar",
+            "tuning": [
+              "E2",
+              "A2",
+              "D3",
+              "G3",
+              "B3",
+              "E4"
+            ]
+          }
+        ],
+        "version": "0.1"
       }
     `);
   });
