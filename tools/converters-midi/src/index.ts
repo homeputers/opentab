@@ -24,45 +24,6 @@ interface MidiMetaEvent {
 
 type MidiEvent = MidiNoteEvent | MidiMetaEvent;
 
-type MidiTrackEvent =
-  | {
-      deltaTime: number;
-      type: "meta";
-      subtype: "setTempo";
-      microsecondsPerBeat: number;
-    }
-  | {
-      deltaTime: number;
-      type: "meta";
-      subtype: "timeSignature";
-      numerator: number;
-      denominator: number;
-      metronome: number;
-      thirtyseconds: number;
-    }
-  | {
-      deltaTime: number;
-      type: "channel";
-      subtype: "noteOn" | "noteOff";
-      channel: number;
-      noteNumber: number;
-      velocity: number;
-    }
-  | {
-      deltaTime: number;
-      type: "meta";
-      subtype: "endOfTrack";
-    };
-
-interface MidiFileData {
-  header: {
-    format: 0 | 1 | 2;
-    numTracks: number;
-    ticksPerBeat: number;
-  };
-  tracks: MidiTrackEvent[][];
-}
-
 function durationToTicks(duration: Duration, ppq = PPQ): number {
   const baseTicks: Record<Duration["base"], number> = {
     w: ppq * 4,
@@ -227,7 +188,7 @@ function buildTrackEvents(
   document: OpenTabDocument,
   track: Track,
   channel: number
-): MidiTrackEvent[] {
+): MidiData["tracks"][number] {
   const tempo = document.header.tempo_bpm ?? DEFAULT_TEMPO_BPM;
   const timeSignature = document.header.time_signature ?? DEFAULT_TIME_SIGNATURE;
   const metaEvents: MidiEvent[] = [
@@ -252,7 +213,7 @@ function buildTrackEvents(
   });
 
   let lastTick = 0;
-  const trackEvents: MidiTrackEvent[] = [];
+  const trackEvents: MidiData["tracks"][number] = [];
 
   for (const event of combined) {
     const deltaTime = event.tick - lastTick;
@@ -260,8 +221,8 @@ function buildTrackEvents(
     if (event.type === "tempo") {
       trackEvents.push({
         deltaTime,
-        type: "meta",
-        subtype: "setTempo",
+        type: "setTempo",
+        meta: true,
         microsecondsPerBeat: Math.round(60_000_000 / tempo),
       });
       continue;
@@ -269,8 +230,8 @@ function buildTrackEvents(
     if (event.type === "timeSignature") {
       trackEvents.push({
         deltaTime,
-        type: "meta",
-        subtype: "timeSignature",
+        type: "timeSignature",
+        meta: true,
         numerator: timeSignature.numerator,
         denominator: timeSignature.denominator,
         metronome: 24,
@@ -281,8 +242,7 @@ function buildTrackEvents(
     if (event.type === "noteOn") {
       trackEvents.push({
         deltaTime,
-        type: "channel",
-        subtype: "noteOn",
+        type: "noteOn",
         channel: event.channel,
         noteNumber: event.noteNumber,
         velocity: event.velocity,
@@ -292,8 +252,7 @@ function buildTrackEvents(
     if (event.type === "noteOff") {
       trackEvents.push({
         deltaTime,
-        type: "channel",
-        subtype: "noteOff",
+        type: "noteOff",
         channel: event.channel,
         noteNumber: event.noteNumber,
         velocity: event.velocity,
@@ -303,8 +262,8 @@ function buildTrackEvents(
 
   trackEvents.push({
     deltaTime: 0,
-    type: "meta",
-    subtype: "endOfTrack",
+    type: "endOfTrack",
+    meta: true,
   });
 
   return trackEvents;
@@ -315,9 +274,9 @@ export function toMidi(document: OpenTabDocument): Uint8Array {
     buildTrackEvents(document, track, index % 16)
   );
 
-  const format: MidiFileData["header"]["format"] =
+  const format: MidiData["header"]["format"] =
     tracks.length > 1 ? 1 : 0;
-  const midiData: MidiFileData = {
+  const midiData: MidiData = {
     header: {
       format,
       numTracks: tracks.length,
@@ -326,5 +285,5 @@ export function toMidi(document: OpenTabDocument): Uint8Array {
     tracks,
   };
 
-  return Uint8Array.from(writeMidi(midiData as unknown as MidiData));
+  return Uint8Array.from(writeMidi(midiData));
 }
