@@ -52,9 +52,9 @@ describe("parseOpenTab samples", () => {
           "tempo_bpm": 100,
           "time_signature": {
             "denominator": 4,
-            "numerator": 4
+            "numerator": 4,
           },
-          "title": "Minimal Example"
+          "title": "Minimal Example",
         },
         "measures": [
           {
@@ -65,43 +65,43 @@ describe("parseOpenTab samples", () => {
                   "v1": [
                     {
                       "duration": {
-                        "base": "q"
+                        "base": "q",
                       },
                       "note": {
                         "fret": 3,
-                        "string": 6
+                        "string": 6,
                       },
-                      "type": "note"
+                      "type": "note",
                     },
                     {
                       "duration": {
-                        "base": "q"
+                        "base": "q",
                       },
                       "note": {
                         "fret": 5,
-                        "string": 5
+                        "string": 5,
                       },
-                      "type": "note"
+                      "type": "note",
                     },
                     {
                       "duration": {
-                        "base": "q"
+                        "base": "q",
                       },
                       "note": {
                         "fret": 5,
-                        "string": 4
+                        "string": 4,
                       },
-                      "type": "note"
+                      "type": "note",
                     },
                     {
                       "duration": {
-                        "base": "q"
+                        "base": "q",
                       },
                       "note": {
                         "fret": 3,
-                        "string": 3
+                        "string": 3,
                       },
-                      "type": "note"
+                      "type": "note",
                     },
                   ],
                 },
@@ -116,43 +116,43 @@ describe("parseOpenTab samples", () => {
                   "v1": [
                     {
                       "duration": {
-                        "base": "q"
+                        "base": "q",
                       },
                       "note": {
                         "fret": 3,
-                        "string": 6
+                        "string": 6,
                       },
-                      "type": "note"
+                      "type": "note",
                     },
                     {
                       "duration": {
-                        "base": "q"
+                        "base": "q",
                       },
                       "note": {
                         "fret": 5,
-                        "string": 5
+                        "string": 5,
                       },
-                      "type": "note"
+                      "type": "note",
                     },
                     {
                       "duration": {
-                        "base": "q"
+                        "base": "q",
                       },
                       "note": {
                         "fret": 5,
-                        "string": 4
+                        "string": 4,
                       },
-                      "type": "note"
+                      "type": "note",
                     },
                     {
                       "duration": {
-                        "base": "q"
+                        "base": "q",
                       },
                       "note": {
                         "fret": 3,
-                        "string": 3
+                        "string": 3,
                       },
-                      "type": "note"
+                      "type": "note",
                     },
                   ],
                 },
@@ -172,11 +172,11 @@ describe("parseOpenTab samples", () => {
               "D3",
               "G3",
               "B3",
-              "E4"
-            ]
-          }
+              "E4",
+            ],
+          },
         ],
-        "version": "0.1"
+        "version": "0.1",
       }
     `);
   });
