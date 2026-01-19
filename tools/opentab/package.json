@@ -20,6 +20,9 @@
     "@opentab/parser": "workspace:*",
     "commander": "^12.1.0"
   },
+  "devDependencies": {
+    "@types/node": "^22.10.2"
+  },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
     "test": "vitest run --passWithNoTests",
