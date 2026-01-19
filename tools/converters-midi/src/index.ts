@@ -1,5 +1,5 @@
 import type { Duration, NoteRef, OpenTabDocument, Track } from "@opentab/ast";
-import { writeMidi } from "midi-file";
+import { type MidiData, writeMidi } from "midi-file";
 
 export const packageName = "@opentab/converters-midi";
 
@@ -195,7 +195,7 @@ function buildTrackEvents(
   document: OpenTabDocument,
   track: Track,
   channel: number
-) {
+): MidiData["tracks"][number] {
   const tempo = document.header.tempo_bpm ?? DEFAULT_TEMPO_BPM;
   const timeSignature = document.header.time_signature ?? DEFAULT_TIME_SIGNATURE;
   const metaEvents: MidiEvent[] = [
@@ -257,14 +257,16 @@ function buildTrackEvents(
       });
       continue;
     }
-    trackEvents.push({
-      deltaTime,
-      type: "channel",
-      subtype: "noteOff",
-      channel: event.channel,
-      noteNumber: event.noteNumber,
-      velocity: event.velocity,
-    });
+    if (event.type === "noteOff") {
+      trackEvents.push({
+        deltaTime,
+        type: "channel",
+        subtype: "noteOff",
+        channel: event.channel,
+        noteNumber: event.noteNumber,
+        velocity: event.velocity,
+      });
+    }
   }
 
   trackEvents.push({
@@ -281,14 +283,16 @@ export function toMidi(document: OpenTabDocument): Uint8Array {
     buildTrackEvents(document, track, index % 16)
   );
 
-  const midiData = {
+  const format: MidiData["header"]["format"] =
+    tracks.length > 1 ? 1 : 0;
+  const midiData: MidiData = {
     header: {
-      format: tracks.length > 1 ? 1 : 0,
+      format,
       numTracks: tracks.length,
       ticksPerBeat: PPQ,
     },
     tracks,
   };
 
-  return writeMidi(midiData);
+  return Uint8Array.from(writeMidi(midiData));
 }
