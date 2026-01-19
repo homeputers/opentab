@@ -1,5 +1,5 @@
 const vscode = require('vscode');
-const { validate, format } = require('@opentab/language-service');
+const { validate, format } = require('./language-service');
 
 function activate(context) {
   const diagnostics = vscode.languages.createDiagnosticCollection('opentab');

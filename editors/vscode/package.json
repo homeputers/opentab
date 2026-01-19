@@ -34,9 +34,6 @@
   "scripts": {
     "test": "node ./tests/validator.test.js"
   },
-  "dependencies": {
-    "@opentab/language-service": "file:../../tools/language-service"
-  },
   "contributes": {
     "commands": [
       {
