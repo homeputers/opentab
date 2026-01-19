@@ -43,7 +43,7 @@ describe("parseOpenTab samples", () => {
   it("matches the AST snapshot for minimal.otab", () => {
     const source = fs.readFileSync(path.join(samplesDir, "minimal.otab"), "utf8");
     const document = parseOpenTab(source);
-    const snapshot = JSON.stringify(sortObject(document), null, 2);
+    const snapshot = sortObject(document);
 
     expect(snapshot).toMatchInlineSnapshot(`
       {
