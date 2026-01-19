@@ -24,12 +24,7 @@ interface MidiMetaEvent {
 
 type MidiEvent = MidiNoteEvent | MidiMetaEvent;
 
-interface MidiTrackEvent {
-  deltaTime: number;
-  type: "meta" | "channel";
-  subtype: string;
-  [key: string]: number | string;
-}
+type MidiTrackEvent = MidiData["tracks"][number][number];
 
 function durationToTicks(duration: Duration, ppq = PPQ): number {
   const baseTicks: Record<Duration["base"], number> = {
@@ -220,7 +215,7 @@ function buildTrackEvents(
   });
 
   let lastTick = 0;
-  const trackEvents: MidiTrackEvent[] = [];
+  const trackEvents: MidiData["tracks"][number] = [];
 
   for (const event of combined) {
     const deltaTime = event.tick - lastTick;
