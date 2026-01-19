@@ -20,7 +20,7 @@ const getTrackStringCount = (track: Track, document: OpenTabDocument): number =>
     if (!trackMeasure) {
       continue;
     }
-    for (const events of Object.values(trackMeasure.voices)) {
+    for (const events of Object.values(trackMeasure.voices) as Event[][]) {
       for (const event of events) {
         if (event.type === "note") {
           maxString = Math.max(maxString, event.note.string);
@@ -59,10 +59,12 @@ const renderEventSegments = (event: Event, stringCount: number): string[] => {
     );
   }
 
-  const widths = event.chord.map((note) => String(note.fret).length);
+  const widths = event.chord.map((note: NoteRef) => String(note.fret).length);
   const width = Math.max(...widths, 1);
   return Array.from({ length: stringCount }, (_, lineIndex) => {
-    const note = event.chord.find((entry) => entry.string === lineIndex + 1);
+    const note = event.chord.find(
+      (entry: NoteRef) => entry.string === lineIndex + 1
+    );
     if (!note) {
       return "-".repeat(width);
     }
