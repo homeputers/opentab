@@ -1,5 +1,5 @@
 const vscode = require('vscode');
-const { validateText } = require('./validator');
+const { validate, format } = require('@opentab/language-service');
 
 function activate(context) {
   const diagnostics = vscode.languages.createDiagnosticCollection('opentab');
@@ -42,7 +42,7 @@ function activate(context) {
 }
 
 function updateDiagnostics(document, diagnostics) {
-  const results = validateText(document.getText());
+  const results = validate(document.getText());
   const vscodeDiagnostics = results.map((result) => {
     const line = Math.max(0, Math.min(result.line, document.lineCount - 1));
     const lineText = document.lineAt(line).text;
@@ -62,66 +62,11 @@ function updateDiagnostics(document, diagnostics) {
 
 function formatText(document) {
   const eol = document.eol === vscode.EndOfLine.LF ? '\n' : '\r\n';
-  const lines = document.getText().split(/\r?\n/);
-  const formattedLines = [];
-
-  for (const line of lines) {
-    formattedLines.push(formatLine(line));
+  const formatted = format(document.getText());
+  if (eol === '\n') {
+    return formatted;
   }
-
-  const normalizedLines = [];
-  for (const line of formattedLines) {
-    if (line.trim() === '---') {
-      while (
-        normalizedLines.length > 0 &&
-        normalizedLines[normalizedLines.length - 1].trim() === ''
-      ) {
-        normalizedLines.pop();
-      }
-      if (normalizedLines.length > 0) {
-        normalizedLines.push('');
-      }
-      normalizedLines.push('---');
-      continue;
-    }
-    normalizedLines.push(line);
-  }
-
-  return normalizedLines.join(eol);
-}
-
-function formatLine(line) {
-  const trimmedEnd = line.replace(/\s+$/, '');
-  if (trimmedEnd.trim().startsWith('#')) {
-    return trimmedEnd;
-  }
-
-  const commentIndex = trimmedEnd.indexOf('#');
-  const hasInlineComment = commentIndex > -1;
-  const codePart = hasInlineComment
-    ? trimmedEnd.slice(0, commentIndex)
-    : trimmedEnd;
-  const commentPart = hasInlineComment ? trimmedEnd.slice(commentIndex) : '';
-
-  const formattedCode = formatMeasureLine(codePart);
-  if (commentPart) {
-    const spacer = formattedCode.length > 0 ? ' ' : '';
-    return `${formattedCode}${spacer}${commentPart}`.replace(/\s+$/, '');
-  }
-  return formattedCode;
-}
-
-function formatMeasureLine(line) {
-  const match = line.match(/^\s*(m\d+)\s*:\s*\|\s*(.*?)\s*\|\s*$/);
-  if (!match) {
-    return line.replace(/\s+$/, '');
-  }
-
-  const tokens = match[2].trim().split(/\s+/).filter(Boolean);
-  if (tokens.length === 0) {
-    return `${match[1]}: | |`;
-  }
-  return `${match[1]}: | ${tokens.join(' ')} |`;
+  return formatted.replace(/\n/g, eol);
 }
 
 function deactivate() {}
