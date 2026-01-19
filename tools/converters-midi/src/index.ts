@@ -24,7 +24,44 @@ interface MidiMetaEvent {
 
 type MidiEvent = MidiNoteEvent | MidiMetaEvent;
 
-type MidiTrackEvent = MidiData["tracks"][number][number];
+type MidiTrackEvent =
+  | {
+      deltaTime: number;
+      type: "meta";
+      subtype: "setTempo";
+      microsecondsPerBeat: number;
+    }
+  | {
+      deltaTime: number;
+      type: "meta";
+      subtype: "timeSignature";
+      numerator: number;
+      denominator: number;
+      metronome: number;
+      thirtyseconds: number;
+    }
+  | {
+      deltaTime: number;
+      type: "channel";
+      subtype: "noteOn" | "noteOff";
+      channel: number;
+      noteNumber: number;
+      velocity: number;
+    }
+  | {
+      deltaTime: number;
+      type: "meta";
+      subtype: "endOfTrack";
+    };
+
+interface MidiFileData {
+  header: {
+    format: 0 | 1 | 2;
+    numTracks: number;
+    ticksPerBeat: number;
+  };
+  tracks: MidiTrackEvent[][];
+}
 
 function durationToTicks(duration: Duration, ppq = PPQ): number {
   const baseTicks: Record<Duration["base"], number> = {
@@ -190,7 +227,7 @@ function buildTrackEvents(
   document: OpenTabDocument,
   track: Track,
   channel: number
-): MidiData["tracks"][number] {
+): MidiTrackEvent[] {
   const tempo = document.header.tempo_bpm ?? DEFAULT_TEMPO_BPM;
   const timeSignature = document.header.time_signature ?? DEFAULT_TIME_SIGNATURE;
   const metaEvents: MidiEvent[] = [
@@ -215,7 +252,7 @@ function buildTrackEvents(
   });
 
   let lastTick = 0;
-  const trackEvents: MidiData["tracks"][number] = [];
+  const trackEvents: MidiTrackEvent[] = [];
 
   for (const event of combined) {
     const deltaTime = event.tick - lastTick;
@@ -278,9 +315,9 @@ export function toMidi(document: OpenTabDocument): Uint8Array {
     buildTrackEvents(document, track, index % 16)
   );
 
-  const format: MidiData["header"]["format"] =
+  const format: MidiFileData["header"]["format"] =
     tracks.length > 1 ? 1 : 0;
-  const midiData: MidiData = {
+  const midiData: MidiFileData = {
     header: {
       format,
       numTracks: tracks.length,
@@ -289,5 +326,5 @@ export function toMidi(document: OpenTabDocument): Uint8Array {
     tracks,
   };
 
-  return Uint8Array.from(writeMidi(midiData));
+  return Uint8Array.from(writeMidi(midiData as unknown as MidiData));
 }
