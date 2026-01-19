@@ -3,6 +3,7 @@ import type {
   Annotations,
   Duration,
   Event,
+  Header,
   Measure,
   NoteRef,
   OpenTabDocument,
@@ -15,6 +16,11 @@ import type {
 export const packageName = "@opentab/parser";
 
 const HEADER_DELIMITER = "---";
+const DEFAULT_TEMPO_BPM = 120;
+const DEFAULT_TIME_SIGNATURE: TimeSignature = {
+  numerator: 4,
+  denominator: 4,
+};
 
 export class OpenTabParseError extends Error {
   constructor(message: string) {
@@ -156,6 +162,81 @@ function parseTimeSignature(value: unknown): TimeSignature | undefined {
     numerator: Number(match[1]),
     denominator: Number(match[2]) as TimeSignature["denominator"],
   };
+}
+
+function normalizeTimeSignature(value: unknown): TimeSignature {
+  if (typeof value === "string") {
+    const parsed = parseTimeSignature(value);
+    if (!parsed) {
+      throw new OpenTabParseError(`Invalid time signature: ${value}`);
+    }
+    return parsed;
+  }
+
+  if (value && typeof value === "object") {
+    const candidate = value as {
+      numerator?: unknown;
+      denominator?: unknown;
+    };
+    if (
+      typeof candidate.numerator === "number" &&
+      Number.isInteger(candidate.numerator) &&
+      typeof candidate.denominator === "number" &&
+      Number.isInteger(candidate.denominator) &&
+      [1, 2, 4, 8, 16, 32].includes(candidate.denominator)
+    ) {
+      return {
+        numerator: candidate.numerator,
+        denominator: candidate.denominator as TimeSignature["denominator"],
+      };
+    }
+  }
+
+  throw new OpenTabParseError("Invalid time signature value");
+}
+
+function normalizeHeader(raw: Record<string, unknown>): Header {
+  const header: Record<string, unknown> = { ...raw };
+
+  const stringFields = [
+    "title",
+    "artist",
+    "album",
+    "composer",
+    "source",
+    "copyright",
+  ];
+
+  for (const field of stringFields) {
+    if (field in raw && typeof raw[field] !== "string") {
+      throw new OpenTabParseError(`Invalid header field: ${field}`);
+    }
+  }
+
+  if ("tempo_bpm" in raw) {
+    const tempo = raw.tempo_bpm;
+    if (typeof tempo !== "number" || Number.isNaN(tempo) || tempo < 1) {
+      throw new OpenTabParseError("Invalid tempo_bpm");
+    }
+    header.tempo_bpm = tempo;
+  } else {
+    header.tempo_bpm = DEFAULT_TEMPO_BPM;
+  }
+
+  if ("time_signature" in raw) {
+    header.time_signature = normalizeTimeSignature(raw.time_signature);
+  } else {
+    header.time_signature = DEFAULT_TIME_SIGNATURE;
+  }
+
+  if ("swing" in raw) {
+    if (raw.swing !== "none" && raw.swing !== "eighth") {
+      throw new OpenTabParseError("Invalid swing value");
+    }
+    header.swing = raw.swing;
+  }
+
+  return header as Header;
 }
 
 function parseDuration(token: string): Duration | null {
@@ -495,11 +576,7 @@ export function parseOpenTab(source: string): OpenTabDocument {
     throw new OpenTabParseError("Unsupported version");
   }
 
-  if (parsedHeader.header.time_signature) {
-    parsedHeader.header.time_signature = parseTimeSignature(
-      parsedHeader.header.time_signature
-    );
-  }
+  const header = normalizeHeader(parsedHeader.header);
 
   const state: DirectiveState = { trackId: null, voiceId: null };
   const measureMap = new Map<number, Measure>();
@@ -527,7 +604,7 @@ export function parseOpenTab(source: string): OpenTabDocument {
   return {
     format: "opentab",
     version: "0.1",
-    header: parsedHeader.header,
+    header,
     tracks: parsedHeader.tracks,
     measures,
   };
