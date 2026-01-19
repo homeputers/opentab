@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020";
-import { type AnySchema } from "ajv";
+import { type AnySchema, type ErrorObject } from "ajv";
 
 export const packageName = "@opentab/ast";
 
@@ -96,7 +96,8 @@ export interface OpenTabDocument {
 }
 
 const SCHEMA_RELATIVE_PATH = path.join("spec", "opentab-ast-schema-v0.1.json");
-let cachedValidator: ReturnType<Ajv["compile"]> | null = null;
+type Validator = ReturnType<InstanceType<typeof Ajv2020>["compile"]>;
+let cachedValidator: Validator | null = null;
 
 export function getSchemaPath(): string {
   let currentDir = path.dirname(fileURLToPath(import.meta.url));
@@ -139,7 +140,7 @@ export function validateAst(document: unknown): {
     return { ok };
   }
 
-  const errors = cachedValidator.errors?.map((error) => {
+  const errors = cachedValidator.errors?.map((error: ErrorObject) => {
     const location = error.instancePath || "(root)";
     return `${location} ${error.message ?? "is invalid"}`.trim();
   });
