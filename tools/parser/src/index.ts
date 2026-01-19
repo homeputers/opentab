@@ -41,6 +41,11 @@ interface DirectiveState {
   voiceId: string | null;
 }
 
+interface LineEntry {
+  text: string;
+  lineNumber: number;
+}
+
 function stripComment(line: string): string {
   const trimmed = line.trim();
   if (trimmed.startsWith("#")) {
@@ -89,15 +94,29 @@ function buildTrack(candidate: Partial<Track>): Track {
   };
 }
 
-function parseHeader(lines: string[]): ParsedHeader {
+function formatErrorLocation(
+  message: string,
+  lineNumber?: number,
+  column?: number
+): string {
+  if (!lineNumber) {
+    return message;
+  }
+  if (!column) {
+    return `${message} (line ${lineNumber})`;
+  }
+  return `${message} (line ${lineNumber}, column ${column})`;
+}
+
+function parseHeader(lines: LineEntry[]): ParsedHeader {
   const header: Record<string, unknown> = {};
   const tracks: Track[] = [];
   let currentTrack: Partial<Track> | null = null;
   let format: string | undefined;
   let version: string | undefined;
 
-  for (const rawLine of lines) {
-    const line = stripComment(rawLine).trim();
+  for (const entry of lines) {
+    const line = stripComment(entry.text).trim();
     if (!line) {
       continue;
     }
@@ -112,7 +131,9 @@ function parseHeader(lines: string[]): ParsedHeader {
 
     const match = line.match(/^([A-Za-z0-9_]+)\s*=\s*(.+)$/);
     if (!match) {
-      throw new OpenTabParseError(`Invalid header line: ${line}`);
+      throw new OpenTabParseError(
+        formatErrorLocation(`Invalid header line: ${line}`, entry.lineNumber, 1)
+      );
     }
     const [, key, valueRaw] = match;
     const value = parseTomlValue(valueRaw);
@@ -422,11 +443,15 @@ function parseNoteRef(raw: string): NoteRef {
     index += nextMatch[1].length;
   }
 
-  return {
+  const noteRef: NoteRef = {
     string: Number(stringRaw),
     fret: Number(currentFretMatch[1]),
-    inlineTechniques: techniques.length > 0 ? techniques : undefined,
   };
+  if (techniques.length > 0) {
+    noteRef.inlineTechniques = techniques;
+  }
+
+  return noteRef;
 }
 
 function parseChord(token: string): { notes: NoteRef[]; annotations?: Annotations } {
@@ -466,15 +491,22 @@ function parseNote(token: string): { note: NoteRef; annotations?: Annotations } 
 function parseMeasureLine(
   line: string,
   state: DirectiveState,
-  measureMap: Map<number, Measure>
+  measureMap: Map<number, Measure>,
+  lineNumber: number
 ): void {
   const match = line.match(/^m(\d+):\s*\|(.*)\|\s*$/);
   if (!match) {
-    throw new OpenTabParseError(`Invalid measure line: ${line}`);
+    throw new OpenTabParseError(
+      formatErrorLocation(`Invalid measure line: ${line}`, lineNumber, 1)
+    );
   }
   if (!state.trackId || !state.voiceId) {
     throw new OpenTabParseError(
-      `Measure defined before selecting track/voice: ${line}`
+      formatErrorLocation(
+        `Measure defined before selecting track/voice: ${line}`,
+        lineNumber,
+        1
+      )
     );
   }
 
@@ -483,52 +515,76 @@ function parseMeasureLine(
   const tokens = content ? splitTokens(content) : [];
   let currentDuration: Duration | null = null;
   const events: Event[] = [];
+  const baseColumn = line.indexOf("|") + 2;
+  let searchStart = baseColumn - 1;
 
   for (const token of tokens) {
-    const duration = parseDuration(token);
-    if (duration) {
-      currentDuration = duration;
-      continue;
-    }
-    if (!currentDuration) {
-      throw new OpenTabParseError(
-        `Missing duration before token "${token}" in measure ${measureIndex}`
-      );
-    }
+    const tokenIndex = line.indexOf(token, searchStart);
+    const column = tokenIndex === -1 ? 1 : tokenIndex + 1;
+    searchStart = tokenIndex === -1 ? searchStart : tokenIndex + token.length;
 
-    if (token.startsWith("r")) {
-      const rest = parseRest(token);
-      events.push({
-        type: "rest",
-        duration: currentDuration,
-        annotations: rest.annotations,
-      });
-      continue;
-    }
+    try {
+      const duration = parseDuration(token);
+      if (duration) {
+        currentDuration = duration;
+        continue;
+      }
+      if (!currentDuration) {
+        throw new OpenTabParseError(
+          `Missing duration before token "${token}" in measure ${measureIndex}`
+        );
+      }
 
-    if (token.startsWith("[")) {
-      const chord = parseChord(token);
-      events.push({
-        type: "chord",
-        duration: currentDuration,
-        chord: chord.notes,
-        annotations: chord.annotations,
-      });
-      continue;
-    }
+      if (token.startsWith("r")) {
+        const rest = parseRest(token);
+        const restEvent: Event = {
+          type: "rest",
+          duration: currentDuration,
+        };
+        if (rest.annotations) {
+          restEvent.annotations = rest.annotations;
+        }
+        events.push(restEvent);
+        continue;
+      }
 
-    if (token.startsWith("(")) {
-      const note = parseNote(token);
-      events.push({
-        type: "note",
-        duration: currentDuration,
-        note: note.note,
-        annotations: note.annotations,
-      });
-      continue;
-    }
+      if (token.startsWith("[")) {
+        const chord = parseChord(token);
+        const chordEvent: Event = {
+          type: "chord",
+          duration: currentDuration,
+          chord: chord.notes,
+        };
+        if (chord.annotations) {
+          chordEvent.annotations = chord.annotations;
+        }
+        events.push(chordEvent);
+        continue;
+      }
 
-    throw new OpenTabParseError(`Unknown token: ${token}`);
+      if (token.startsWith("(")) {
+        const note = parseNote(token);
+        const noteEvent: Event = {
+          type: "note",
+          duration: currentDuration,
+          note: note.note,
+        };
+        if (note.annotations) {
+          noteEvent.annotations = note.annotations;
+        }
+        events.push(noteEvent);
+        continue;
+      }
+
+      throw new OpenTabParseError(`Unknown token: ${token}`);
+    } catch (error) {
+      if (error instanceof OpenTabParseError) {
+        throw new OpenTabParseError(
+          formatErrorLocation(error.message, lineNumber, column)
+        );
+      }
+      throw error;
+    }
   }
 
   const measure =
@@ -549,10 +605,16 @@ function parseMeasureLine(
   measureMap.set(measureIndex, measure);
 }
 
-function parseDirective(line: string, state: DirectiveState): void {
+function parseDirective(
+  line: string,
+  state: DirectiveState,
+  lineNumber: number
+): void {
   const match = line.match(/^@track\s+(\S+)(?:\s+voice\s+(\S+))?$/);
   if (!match) {
-    throw new OpenTabParseError(`Invalid directive: ${line}`);
+    throw new OpenTabParseError(
+      formatErrorLocation(`Invalid directive: ${line}`, lineNumber, 1)
+    );
   }
   state.trackId = match[1];
   state.voiceId = match[2] ?? "v1";
@@ -568,7 +630,12 @@ export function parseOpenTab(source: string): OpenTabDocument {
   const headerLines = lines.slice(0, delimiterIndex);
   const bodyLines = lines.slice(delimiterIndex + 1);
 
-  const parsedHeader = parseHeader(headerLines);
+  const parsedHeader = parseHeader(
+    headerLines.map((text, index) => ({
+      text,
+      lineNumber: index + 1,
+    }))
+  );
   if (parsedHeader.format !== "opentab") {
     throw new OpenTabParseError("Unsupported format");
   }
@@ -581,20 +648,23 @@ export function parseOpenTab(source: string): OpenTabDocument {
   const state: DirectiveState = { trackId: null, voiceId: null };
   const measureMap = new Map<number, Measure>();
 
-  for (const rawLine of bodyLines) {
+  for (const [index, rawLine] of bodyLines.entries()) {
+    const lineNumber = delimiterIndex + 2 + index;
     const stripped = stripComment(rawLine).trim();
     if (!stripped) {
       continue;
     }
     if (stripped.startsWith("@track")) {
-      parseDirective(stripped, state);
+      parseDirective(stripped, state, lineNumber);
       continue;
     }
     if (stripped.startsWith("m")) {
-      parseMeasureLine(stripped, state, measureMap);
+      parseMeasureLine(stripped, state, measureMap, lineNumber);
       continue;
     }
-    throw new OpenTabParseError(`Unknown line in body: ${stripped}`);
+    throw new OpenTabParseError(
+      formatErrorLocation(`Unknown line in body: ${stripped}`, lineNumber, 1)
+    );
   }
 
   const measures = Array.from(measureMap.values()).sort(
