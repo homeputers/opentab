@@ -96,6 +96,7 @@ jobs:
         run: |
           PACKAGE_JSON_FILES=$(git ls-files -- 'package.json' '**/package.json')
           NEW_VERSION="${{ steps.bump.outputs.new_version }}"
+          export PACKAGE_JSON_FILES NEW_VERSION
           node -e "const fs=require('fs');const files=process.env.PACKAGE_JSON_FILES.split('\n').filter(Boolean);const version=process.env.NEW_VERSION;for(const file of files){const data=JSON.parse(fs.readFileSync(file,'utf8'));if(data.version!==version){data.version=version;fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');}}"
 
       - name: Create release branch
