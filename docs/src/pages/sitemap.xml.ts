@@ -1,4 +1,4 @@
-const pages = ['/', '/spec', '/examples', '/roadmap', '/try-it'];
+const pages = ['/', '/spec', '/examples', '/roadmap', '/try-it', '/editors/vscode'];
 
 export const prerender = true;
 
