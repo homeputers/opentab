@@ -32,9 +32,14 @@
     "vscode": "^1.75.0"
   },
   "scripts": {
-    "test": "node ./tests/validator.test.js"
+    "test": "node ./tests/validator.test.js",
+    "prepare:vsce": "node ./scripts/prepare-vsce.js",
+    "vsce:package": "npm run prepare:vsce && npx vsce package",
+    "vsce:publish": "npm run prepare:vsce && npx vsce publish"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@opentab/language-service": "file:../../tools/language-service"
+  },
   "contributes": {
     "commands": [
       {
