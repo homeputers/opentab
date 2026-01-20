@@ -38,5 +38,11 @@ jobs:
       - name: Install extension dependencies
         run: npm install
 
+      - name: Replace language-service symlink for packaging
+        run: |
+          rm -rf node_modules/@opentab/language-service
+          mkdir -p node_modules/@opentab
+          cp -R ../../tools/language-service node_modules/@opentab/language-service
+
       - name: Package extension
         run: vsce package
