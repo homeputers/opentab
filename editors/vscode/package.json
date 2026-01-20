@@ -33,8 +33,8 @@
   },
   "scripts": {
     "sync-language-service": "node ./scripts/sync-language-service.mjs",
-    "build": "npm run sync-language-service && tsup src/extension.ts --format cjs --platform node --target node16 --outDir dist",
-    "watch": "npm run sync-language-service && tsup src/extension.ts --format cjs --platform node --target node16 --outDir dist --watch",
+    "build": "npm run sync-language-service && tsup",
+    "watch": "npm run sync-language-service && tsup --watch",
     "test": "npm run sync-language-service && node ./tests/validator.test.js && node ./tests/smoke.test.js",
     "prepare:vsce": "npm run build",
     "vsce:package": "npm run prepare:vsce && npx vsce package",
