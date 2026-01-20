@@ -64,6 +64,10 @@
       {
         "command": "opentab.exportMidi",
         "title": "OpenTab: Export MIDI..."
+      },
+      {
+        "command": "opentab.playMidi",
+        "title": "OpenTab: Play MIDI"
       }
     ],
     "languages": [

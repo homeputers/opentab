@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 import * as vscode from 'vscode';
 import { format, validate } from './language-service/index.js';
 import { toAsciiTab } from './opentab-tools/converters-ascii/index.js';
@@ -91,6 +92,42 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
+  const playMidiCommand = vscode.commands.registerCommand(
+    'opentab.playMidi',
+    async () => {
+      const document = getActiveOpenTabDocument();
+      if (!document) {
+        return;
+      }
+      const parsed = parseActiveDocument(document);
+      if (!parsed) {
+        return;
+      }
+
+      const midiBytes = toMidi(parsed);
+      const storageUri = context.storageUri ?? context.globalStorageUri;
+      const tmpUri = vscode.Uri.joinPath(storageUri, 'tmp');
+      await vscode.workspace.fs.createDirectory(tmpUri);
+
+      const baseName = getDocumentBaseName(document);
+      const fileName = `${baseName}-preview.mid`;
+      const midiUri = vscode.Uri.joinPath(tmpUri, fileName);
+      await vscode.workspace.fs.writeFile(midiUri, midiBytes);
+
+      const opened = await openMidiExternal(midiUri.fsPath);
+      if (!opened) {
+        void vscode.window.showWarningMessage(
+          `OpenTab: Unable to open MIDI file. Saved at ${midiUri.fsPath}`,
+        );
+        return;
+      }
+
+      void vscode.window.showInformationMessage(
+        `Playing MIDI… Saved at ${midiUri.fsPath}`,
+      );
+    },
+  );
+
   const changeDisposable = vscode.workspace.onDidChangeTextDocument((event) => {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.uri.toString() !== event.document.uri.toString()) {
@@ -127,6 +164,7 @@ export function activate(context: vscode.ExtensionContext): void {
     previewCommand,
     exportAsciiCommand,
     exportMidiCommand,
+    playMidiCommand,
     changeDisposable,
     activeEditorDisposable,
   );
@@ -187,6 +225,11 @@ function parseActiveDocument(
   }
 }
 
+function getDocumentBaseName(document: vscode.TextDocument): string {
+  const filePath = document.uri.scheme === 'file' ? document.uri.fsPath : undefined;
+  return filePath ? path.parse(filePath).name : 'untitled';
+}
+
 async function promptForExportPath(
   document: vscode.TextDocument,
   primaryExtension: string,
@@ -215,6 +258,48 @@ async function promptForExportPath(
     defaultUri,
     filters,
   });
+}
+
+async function openMidiExternal(filePath: string): Promise<boolean> {
+  try {
+    const opened = await vscode.env.openExternal(vscode.Uri.file(filePath));
+    if (opened) {
+      return true;
+    }
+  } catch (error) {
+    void error;
+  }
+
+  return openWithSystemApp(filePath);
+}
+
+function openWithSystemApp(filePath: string): boolean {
+  let command = '';
+  let args: string[] = [];
+
+  switch (process.platform) {
+    case 'darwin':
+      command = 'open';
+      args = [filePath];
+      break;
+    case 'win32':
+      command = 'cmd';
+      args = ['/c', 'start', '', filePath];
+      break;
+    default:
+      command = 'xdg-open';
+      args = [filePath];
+      break;
+  }
+
+  try {
+    const child = spawn(command, args, { detached: true, stdio: 'ignore' });
+    child.unref();
+    return true;
+  } catch (error) {
+    void error;
+    return false;
+  }
 }
 
 export function deactivate(): void {}
