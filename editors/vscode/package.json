@@ -53,6 +53,14 @@
       {
         "command": "opentab.preview",
         "title": "OpenTab: Preview"
+      },
+      {
+        "command": "opentab.exportAscii",
+        "title": "OpenTab: Export ASCII..."
+      },
+      {
+        "command": "opentab.exportMidi",
+        "title": "OpenTab: Export MIDI..."
       }
     ],
     "languages": [
