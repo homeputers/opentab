@@ -4,7 +4,7 @@
   "description": "Syntax highlighting and formatting support for OpenTab tablature files.",
   "version": "0.0.2",
   "publisher": "Homeputers",
-  "icon": "icon.ico",
+  "icon": "icon.png",
   "keywords": [
     "opentab",
     "tablature",
