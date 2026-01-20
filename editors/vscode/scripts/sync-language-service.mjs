@@ -28,6 +28,19 @@ const converterSourceDir = path.resolve(
   'src',
 );
 const converterTargetDir = path.resolve(toolsTargetDir, 'converters-ascii');
+const midiConverterSourceDir = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'tools',
+  'converters-midi',
+  'src',
+);
+const midiConverterTargetDir = path.resolve(
+  toolsTargetDir,
+  'converters-midi',
+);
 
 await rm(targetDir, { recursive: true, force: true });
 await cp(sourceDir, targetDir, { recursive: true });
@@ -35,7 +48,11 @@ await cp(sourceDir, targetDir, { recursive: true });
 await rm(toolsTargetDir, { recursive: true, force: true });
 await cp(parserSourceDir, parserTargetDir, { recursive: true });
 await cp(converterSourceDir, converterTargetDir, { recursive: true });
+await cp(midiConverterSourceDir, midiConverterTargetDir, { recursive: true });
 
 console.log(`Synced language-service from ${sourceDir} to ${targetDir}.`);
 console.log(`Synced parser from ${parserSourceDir} to ${parserTargetDir}.`);
 console.log(`Synced converters-ascii from ${converterSourceDir} to ${converterTargetDir}.`);
+console.log(
+  `Synced converters-midi from ${midiConverterSourceDir} to ${midiConverterTargetDir}.`,
+);

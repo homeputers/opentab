@@ -1,5 +1,9 @@
+import path from 'node:path';
 import * as vscode from 'vscode';
 import { format, validate } from './language-service/index.js';
+import { toAsciiTab } from './opentab-tools/converters-ascii/index.js';
+import { toMidi } from './opentab-tools/converters-midi/index.js';
+import { OpenTabParseError, parseOpenTab } from './opentab-tools/parser/index.js';
 import { hasPreviewPanel, showPreview, updatePreview } from './preview/previewPanel';
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -45,6 +49,48 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
+  const exportAsciiCommand = vscode.commands.registerCommand(
+    'opentab.exportAscii',
+    async () => {
+      const document = getActiveOpenTabDocument();
+      if (!document) {
+        return;
+      }
+      const parsed = parseActiveDocument(document);
+      if (!parsed) {
+        return;
+      }
+      const asciiTab = toAsciiTab(parsed);
+      const saveUri = await promptForExportPath(document, 'tab.txt', 'txt');
+      if (!saveUri) {
+        return;
+      }
+      await vscode.workspace.fs.writeFile(saveUri, Buffer.from(asciiTab, 'utf8'));
+      void vscode.window.showInformationMessage('OpenTab: ASCII export saved.');
+    },
+  );
+
+  const exportMidiCommand = vscode.commands.registerCommand(
+    'opentab.exportMidi',
+    async () => {
+      const document = getActiveOpenTabDocument();
+      if (!document) {
+        return;
+      }
+      const parsed = parseActiveDocument(document);
+      if (!parsed) {
+        return;
+      }
+      const midiBytes = toMidi(parsed);
+      const saveUri = await promptForExportPath(document, 'mid');
+      if (!saveUri) {
+        return;
+      }
+      await vscode.workspace.fs.writeFile(saveUri, midiBytes);
+      void vscode.window.showInformationMessage('OpenTab: MIDI export saved.');
+    },
+  );
+
   const changeDisposable = vscode.workspace.onDidChangeTextDocument((event) => {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.uri.toString() !== event.document.uri.toString()) {
@@ -79,6 +125,8 @@ export function activate(context: vscode.ExtensionContext): void {
     formatProvider,
     formatCommand,
     previewCommand,
+    exportAsciiCommand,
+    exportMidiCommand,
     changeDisposable,
     activeEditorDisposable,
   );
@@ -113,6 +161,60 @@ function formatText(document: vscode.TextDocument): string {
     return formatted;
   }
   return formatted.replace(/\n/g, eol);
+}
+
+function getActiveOpenTabDocument(): vscode.TextDocument | null {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || editor.document.languageId !== 'opentab') {
+    void vscode.window.showWarningMessage('OpenTab: No active .otab document.');
+    return null;
+  }
+  return editor.document;
+}
+
+function parseActiveDocument(
+  document: vscode.TextDocument,
+): ReturnType<typeof parseOpenTab> | null {
+  try {
+    return parseOpenTab(document.getText());
+  } catch (error) {
+    if (error instanceof OpenTabParseError) {
+      void vscode.window.showErrorMessage(`OpenTab parse error: ${error.message}`);
+      return null;
+    }
+    void vscode.window.showErrorMessage('OpenTab: Failed to parse document.');
+    return null;
+  }
+}
+
+async function promptForExportPath(
+  document: vscode.TextDocument,
+  primaryExtension: string,
+  fallbackExtension?: string,
+): Promise<vscode.Uri | undefined> {
+  const filePath = document.uri.scheme === 'file' ? document.uri.fsPath : undefined;
+  const directory =
+    (filePath ? path.dirname(filePath) : undefined) ??
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ??
+    '';
+  const baseName = filePath ? path.parse(filePath).name : 'untitled';
+  const defaultName = `${baseName}.${primaryExtension}`;
+  const defaultUri = directory
+    ? vscode.Uri.file(path.join(directory, defaultName))
+    : vscode.Uri.file(defaultName);
+
+  const filterExtensions = [primaryExtension, fallbackExtension]
+    .filter((value): value is string => Boolean(value))
+    .map((extension) => extension.split('.').pop() ?? extension);
+  const uniqueExtensions = Array.from(new Set(filterExtensions));
+  const filters: Record<string, string[]> = {
+    [primaryExtension.toUpperCase()]: uniqueExtensions,
+  };
+
+  return vscode.window.showSaveDialog({
+    defaultUri,
+    filters,
+  });
 }
 
 export function deactivate(): void {}

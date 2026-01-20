@@ -44,6 +44,9 @@
     "tsup": "^8.0.1",
     "typescript": "^5.4.5"
   },
+  "dependencies": {
+    "midi-file": "^1.2.4"
+  },
   "contributes": {
     "commands": [
       {
@@ -53,6 +56,14 @@
       {
         "command": "opentab.preview",
         "title": "OpenTab: Preview"
+      },
+      {
+        "command": "opentab.exportAscii",
+        "title": "OpenTab: Export ASCII..."
+      },
+      {
+        "command": "opentab.exportMidi",
+        "title": "OpenTab: Export MIDI..."
       }
     ],
     "languages": [
