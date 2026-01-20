@@ -26,33 +26,14 @@ jobs:
       - name: Install vsce
         run: npm install --global @vscode/vsce
 
-      - name: Enable pnpm
-        run: corepack enable
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Install tools dependencies
-        run: pnpm -C ../../tools install
+      - name: Build extension
+        run: npm run build
 
-      - name: Build tools workspace
-        run: pnpm -C ../../tools -r build
-
-      - name: Pack language-service
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/.pack"
-          pnpm -C ../../tools --filter @opentab/language-service pack --pack-destination "$GITHUB_WORKSPACE/.pack"
-
-      - name: Install extension dependencies
-        run: |
-          cp package.json package.json.bak
-          VERSION=$(node -p "require('../../tools/language-service/package.json').version")
-          npm pkg set "dependencies.@opentab/language-service=$VERSION"
-          PACKAGE_TGZ=$(ls -1 "$GITHUB_WORKSPACE/.pack"/*.tgz | head -n1)
-          if [ -z "$PACKAGE_TGZ" ]; then
-            echo "language-service pack output not found" >&2
-            exit 1
-          fi
-          npm install --no-save "$PACKAGE_TGZ"
+      - name: Verify production dependencies
+        run: npm list --production --depth=99999 --loglevel=error
 
       - name: Package extension
-        run: |
-          vsce package
-          mv package.json.bak package.json
+        run: vsce package
