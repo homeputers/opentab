@@ -1,0 +1,16 @@
+---
+import { readFile } from 'node:fs/promises';
+import { marked } from 'marked';
+import Layout from '../../components/Layout.astro';
+
+const vscodeMarkdown = await readFile(new URL('../../../../editors/vscode/README.md', import.meta.url), 'utf-8');
+const normalizedMarkdown = vscodeMarkdown.replace('![OpenTab logo](./logo.png)\n\n', '');
+const vscodeHtml = marked(normalizedMarkdown);
+---
+
+<Layout title="VS Code Extension">
+  <h1 class="page-title">OpenTab VS Code Extension</h1>
+  <div class="card">
+    <div set:html={vscodeHtml} />
+  </div>
+</Layout>

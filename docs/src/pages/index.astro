@@ -1,6 +1,7 @@
 ---
 import Layout from '../components/Layout.astro';
 
+const base = import.meta.env.BASE_URL ?? '/';
 const example = `title "Quick Riff"
 tuning "EADGBE"
 tempo 120
@@ -23,8 +24,9 @@ time 4/4
         informal text tabs and proprietary, hard-to-version formats.
       </p>
       <div class="links">
-        <a href="/spec">Read the Spec</a>
-        <a href="/examples">Browse Examples</a>
+        <a href={`${base}spec`}>Read the Spec</a>
+        <a href={`${base}examples`}>Browse Examples</a>
+        <a href={`${base}editors/vscode`}>VS Code Extension</a>
       </div>
     </div>
     <div class="card">
