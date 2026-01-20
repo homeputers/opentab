@@ -1,7 +1,7 @@
-const vscode = require('vscode');
-const { validate, format } = require('@opentab/language-service');
+import * as vscode from 'vscode';
+import { format, validate } from './language-service/index.js';
 
-function activate(context) {
+export function activate(context: vscode.ExtensionContext): void {
   const diagnostics = vscode.languages.createDiagnosticCollection('opentab');
 
   const saveDisposable = vscode.workspace.onDidSaveTextDocument((document) => {
@@ -41,7 +41,10 @@ function activate(context) {
   );
 }
 
-function updateDiagnostics(document, diagnostics) {
+function updateDiagnostics(
+  document: vscode.TextDocument,
+  diagnostics: vscode.DiagnosticCollection,
+): void {
   const results = validate(document.getText());
   const vscodeDiagnostics = results.map((result) => {
     const line = Math.max(0, Math.min(result.line, document.lineCount - 1));
@@ -60,7 +63,7 @@ function updateDiagnostics(document, diagnostics) {
   diagnostics.set(document.uri, vscodeDiagnostics);
 }
 
-function formatText(document) {
+function formatText(document: vscode.TextDocument): string {
   const eol = document.eol === vscode.EndOfLine.LF ? '\n' : '\r\n';
   const formatted = format(document.getText());
   if (eol === '\n') {
@@ -69,9 +72,4 @@ function formatText(document) {
   return formatted.replace(/\n/g, eol);
 }
 
-function deactivate() {}
-
-module.exports = {
-  activate,
-  deactivate,
-};
+export function deactivate(): void {}

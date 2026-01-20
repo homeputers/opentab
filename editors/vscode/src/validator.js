@@ -1,4 +1,4 @@
-const { validate } = require('@opentab/language-service');
+const { validate } = require('./language-service/index.js');
 
 function validateText(text) {
   return validate(text);

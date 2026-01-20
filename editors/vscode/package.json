@@ -4,7 +4,7 @@
   "description": "Syntax highlighting and formatting support for OpenTab tablature files.",
   "version": "0.0.2",
   "publisher": "Homeputers",
-  "icon": "icon.ico",
+  "icon": "icon.png",
   "keywords": [
     "opentab",
     "tablature",
@@ -24,7 +24,7 @@
   "bugs": {
     "url": "https://github.com/homeputers/opentab/issues"
   },
-  "main": "./src/extension.js",
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onLanguage:opentab"
   ],
@@ -32,13 +32,17 @@
     "vscode": "^1.75.0"
   },
   "scripts": {
-    "test": "node ./tests/validator.test.js",
-    "prepare:vsce": "node ./scripts/prepare-vsce.js",
+    "sync-language-service": "node ./scripts/sync-language-service.mjs",
+    "build": "npm run sync-language-service && tsup",
+    "watch": "npm run sync-language-service && tsup --watch",
+    "test": "npm run sync-language-service && node ./tests/validator.test.js && node ./tests/smoke.test.js",
+    "prepare:vsce": "npm run build",
     "vsce:package": "npm run prepare:vsce && npx vsce package",
     "vsce:publish": "npm run prepare:vsce && npx vsce publish"
   },
-  "dependencies": {
-    "@opentab/language-service": "file:../../tools/language-service"
+  "devDependencies": {
+    "tsup": "^8.0.1",
+    "typescript": "^5.4.5"
   },
   "contributes": {
     "commands": [
