@@ -59,7 +59,11 @@ jobs:
           cp package.json package.json.bak
           VERSION=$(node -p "require('../../tools/language-service/package.json').version")
           npm pkg set "dependencies.@opentab/language-service=$VERSION"
-          PACKAGE_TGZ=$(ls -1 opentab-language-service-*.tgz | head -n1)
+          PACKAGE_TGZ=$(ls -1 *.tgz | head -n1)
+          if [ -z "$PACKAGE_TGZ" ]; then
+            echo "language-service pack output not found" >&2
+            exit 1
+          fi
           npm install --no-save "./$PACKAGE_TGZ"
 
       - name: Configure git author
