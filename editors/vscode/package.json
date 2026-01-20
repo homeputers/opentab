@@ -41,7 +41,8 @@
     "vsce:publish": "npm run prepare:vsce && npx vsce publish"
   },
   "devDependencies": {
-    "tsup": "^8.0.1"
+    "tsup": "^8.0.1",
+    "typescript": "^5.4.5"
   },
   "contributes": {
     "commands": [
