@@ -35,14 +35,18 @@ jobs:
       - name: Build tools workspace
         run: pnpm -C ../../tools -r build
 
-      - name: Install extension dependencies
-        run: npm install
+      - name: Pack language-service
+        run: pnpm -C ../../tools --filter @opentab/language-service pack --pack-destination ../../editors/vscode
 
-      - name: Replace language-service symlink for packaging
+      - name: Install extension dependencies
         run: |
-          rm -rf node_modules/@opentab/language-service
-          mkdir -p node_modules/@opentab
-          cp -R ../../tools/language-service node_modules/@opentab/language-service
+          cp package.json package.json.bak
+          VERSION=$(node -p "require('../../tools/language-service/package.json').version")
+          npm pkg set "dependencies.@opentab/language-service=$VERSION"
+          PACKAGE_TGZ=$(ls -1 opentab-language-service-*.tgz | head -n1)
+          npm install --no-save "./$PACKAGE_TGZ"
 
       - name: Package extension
-        run: vsce package
+        run: |
+          vsce package
+          mv package.json.bak package.json
