@@ -49,6 +49,10 @@
       {
         "command": "opentab.formatDocument",
         "title": "OpenTab: Format Document"
+      },
+      {
+        "command": "opentab.preview",
+        "title": "OpenTab: Preview"
       }
     ],
     "languages": [
