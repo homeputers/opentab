@@ -3,3 +3,4 @@ docs/.astro/
 docs/dist/
 .env
 .DS_Store
+editors/vscode/src/language-service/
