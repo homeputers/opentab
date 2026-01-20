@@ -2,8 +2,8 @@ import path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { toAsciiTab } from '../../../tools/converters-ascii/src/index.ts';
-import { parseOpenTab } from '../../../tools/parser/src/index.ts';
+import { toAsciiTab } from '../opentab-tools/converters-ascii/index';
+import { parseOpenTab } from '../opentab-tools/parser/index';
 
 const PANEL_TITLE = 'OpenTab Preview';
 
