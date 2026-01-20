@@ -42,6 +42,18 @@ jobs:
       - name: Install vsce
         run: npm install --global @vscode/vsce
 
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install tools dependencies
+        run: pnpm -C tools install
+
+      - name: Build tools workspace
+        run: pnpm -C tools -r build
+
+      - name: Install extension dependencies
+        run: npm install
+
       - name: Configure git author
         run: |
           git config user.name "github-actions[bot]"
