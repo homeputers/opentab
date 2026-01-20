@@ -6,14 +6,30 @@ OpenTab is a minimal, explicit tablature format. This extension adds editor supp
 
 ## Features
 
-- Syntax highlighting for OpenTab files
-- Comment support
-- Formatting command (`OpenTab: Format Document`)
-- (Optional) Validation support when the bundled validator is enabled
+- Syntax highlighting
+- Format Document
+- Preview (ASCII)
+- Export ASCII
+- Export MIDI
+- Play MIDI (opens default player)
+
+## How to use
+
+1. Install the extension.
+2. Open or create an `.otab` file.
+3. Use the Command Palette to run OpenTab commands:
+   - `OpenTab: Format Document`
+   - `OpenTab: Preview (ASCII)`
+   - `OpenTab: Export ASCII`
+   - `OpenTab: Export MIDI`
+   - `OpenTab: Play MIDI`
 
 ## Screenshots
 
-_Coming soon. Screenshots will be added once the Marketplace listing is live._
+_Screenshot placeholders (add images when available):_
+
+- Preview (ASCII)
+- Export MIDI
 
 ## Install
 
