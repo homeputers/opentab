@@ -67,6 +67,7 @@ jobs:
             exit 1
           fi
           npm install --no-save "$PACKAGE_TGZ"
+          mv package.json.bak package.json
 
       - name: Configure git author
         run: |
@@ -90,6 +91,13 @@ jobs:
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Sync package.json versions
+        working-directory: ${{ github.workspace }}
+        run: |
+          PACKAGE_JSON_FILES=$(git ls-files -- 'package.json' '**/package.json')
+          NEW_VERSION="${{ steps.bump.outputs.new_version }}"
+          node -e "const fs=require('fs');const files=process.env.PACKAGE_JSON_FILES.split('\n').filter(Boolean);const version=process.env.NEW_VERSION;for(const file of files){const data=JSON.parse(fs.readFileSync(file,'utf8'));if(data.version!==version){data.version=version;fs.writeFileSync(file, JSON.stringify(data, null, 2) + '\n');}}"
+
       - name: Create release branch
         id: release_branch
         run: |
@@ -104,8 +112,7 @@ jobs:
 
       - name: Commit version bump
         run: |
-          mv package.json.bak package.json
-          git add package.json
+          git ls-files -- 'package.json' '**/package.json' | xargs git add
           git commit -m "chore(vscode): bump extension version to v${{ steps.bump.outputs.new_version }}"
 
       - name: Push release branch
