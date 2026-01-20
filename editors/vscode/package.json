@@ -89,6 +89,52 @@
         "scopeName": "source.opentab",
         "path": "./syntaxes/opentab.tmLanguage.json"
       }
-    ]
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "opentab.preview",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.exportMidi",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.exportAscii",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.playMidi",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.formatDocument",
+          "when": "resourceLangId == opentab"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "opentab.preview",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.exportMidi",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.exportAscii",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.playMidi",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.formatDocument",
+          "when": "resourceLangId == opentab"
+        }
+      ]
+    }
   }
 }
