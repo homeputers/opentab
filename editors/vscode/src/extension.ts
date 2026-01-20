@@ -1,8 +1,10 @@
 import * as vscode from 'vscode';
 import { format, validate } from './language-service/index.js';
+import { hasPreviewPanel, showPreview, updatePreview } from './preview/previewPanel';
 
 export function activate(context: vscode.ExtensionContext): void {
   const diagnostics = vscode.languages.createDiagnosticCollection('opentab');
+  let previewUpdateTimeout: NodeJS.Timeout | undefined;
 
   const saveDisposable = vscode.workspace.onDidSaveTextDocument((document) => {
     if (document.languageId !== 'opentab') {
@@ -32,12 +34,53 @@ export function activate(context: vscode.ExtensionContext): void {
     () => vscode.commands.executeCommand('editor.action.formatDocument'),
   );
 
+  const previewCommand = vscode.commands.registerCommand(
+    'opentab.preview',
+    () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor || editor.document.languageId !== 'opentab') {
+        return;
+      }
+      showPreview(context, editor.document);
+    },
+  );
+
+  const changeDisposable = vscode.workspace.onDidChangeTextDocument((event) => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.uri.toString() !== event.document.uri.toString()) {
+      return;
+    }
+    if (event.document.languageId !== 'opentab' || !hasPreviewPanel()) {
+      return;
+    }
+    if (previewUpdateTimeout) {
+      clearTimeout(previewUpdateTimeout);
+    }
+    previewUpdateTimeout = setTimeout(() => {
+      updatePreview(event.document.getText());
+    }, 200);
+  });
+
+  const activeEditorDisposable = vscode.window.onDidChangeActiveTextEditor(
+    (editor) => {
+      if (!editor || editor.document.languageId !== 'opentab') {
+        return;
+      }
+      if (hasPreviewPanel()) {
+        showPreview(context, editor.document);
+      }
+    },
+  );
+
   context.subscriptions.push(
     diagnostics,
     saveDisposable,
     closeDisposable,
     formatProvider,
     formatCommand,
+    previewCommand,
+    changeDisposable,
+    activeEditorDisposable,
   );
 }
 
