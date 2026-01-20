@@ -26,12 +26,20 @@ https://marketplace.visualstudio.com/items?itemName=Homeputers.opentab-vscode
 
 1. Build the package:
    ```bash
-   npx vsce package
+   npm run vsce:package
    ```
 2. Install the generated `.vsix`:
    ```bash
    code --install-extension opentab-vscode-*.vsix
    ```
+
+### Publish
+
+Ensure dependencies are installed before publishing (required for `vsce` validation):
+
+```bash
+npm run vsce:publish
+```
 
 ### Dev run
 
