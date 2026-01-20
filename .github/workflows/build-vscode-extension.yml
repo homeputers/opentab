@@ -36,19 +36,21 @@ jobs:
         run: pnpm -C ../../tools -r build
 
       - name: Pack language-service
-        run: pnpm -C ../../tools --filter @opentab/language-service pack --pack-destination ../../editors/vscode
+        run: |
+          mkdir -p ../../tools/.pack
+          pnpm -C ../../tools --filter @opentab/language-service pack --pack-destination ../../tools/.pack
 
       - name: Install extension dependencies
         run: |
           cp package.json package.json.bak
           VERSION=$(node -p "require('../../tools/language-service/package.json').version")
           npm pkg set "dependencies.@opentab/language-service=$VERSION"
-          PACKAGE_TGZ=$(ls -1 *.tgz | head -n1)
+          PACKAGE_TGZ=$(ls -1 ../../tools/.pack/*.tgz | head -n1)
           if [ -z "$PACKAGE_TGZ" ]; then
             echo "language-service pack output not found" >&2
             exit 1
           fi
-          npm install --no-save "./$PACKAGE_TGZ"
+          npm install --no-save "$PACKAGE_TGZ"
 
       - name: Package extension
         run: |
