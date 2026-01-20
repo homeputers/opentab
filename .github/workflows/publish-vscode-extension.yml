@@ -46,10 +46,10 @@ jobs:
         run: corepack enable
 
       - name: Install tools dependencies
-        run: pnpm -C tools install
+        run: pnpm -C ../../tools install
 
       - name: Build tools workspace
-        run: pnpm -C tools -r build
+        run: pnpm -C ../../tools -r build
 
       - name: Install extension dependencies
         run: npm install
