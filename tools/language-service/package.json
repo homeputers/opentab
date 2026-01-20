@@ -1,0 +1,19 @@
+{
+  "name": "@opentab/language-service",
+  "version": "0.0.1",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.d.ts",
+      "default": "./src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "echo 'No build configured'",
+    "test": "echo 'No tests configured'",
+    "lint": "echo 'No lint configured'",
+    "clean": "echo 'No clean configured'"
+  }
+}

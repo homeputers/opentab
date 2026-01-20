@@ -2,6 +2,7 @@ packages:
   - "ast"
   - "parser"
   - "formatter"
+  - "language-service"
   - "converters-ascii"
   - "converters-midi"
   - "opentab"

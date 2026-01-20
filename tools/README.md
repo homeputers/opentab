@@ -8,6 +8,7 @@ reference implementations and supporting utilities for the OpenTab spec.
 - `ast`: shared AST types and helpers used across tools.
 - `parser`: parser implementation for the OpenTab spec.
 - `formatter`: formatter for OpenTab sources.
+- `language-service`: shared validation and formatting for editors.
 - `converters-ascii`: converter utilities for ASCII tab formats.
 - `converters-midi`: converter utilities for MIDI workflows.
 - `opentab`: CLI and user-facing tooling for OpenTab.
