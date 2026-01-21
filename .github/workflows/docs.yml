@@ -40,6 +40,7 @@ jobs:
           BASE_PATH: /${{ github.event.repository.name }}/
           SITE: https://homeputers.com/opentab
           PUBLIC_GA_MEASUREMENT_ID: ${{ vars.GA_MEASUREMENT_ID || secrets.GA_MEASUREMENT_ID }}
+          PUBLIC_GTM_ID: ${{ vars.GTM_ID || secrets.GTM_ID }}
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

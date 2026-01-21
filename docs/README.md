@@ -19,6 +19,13 @@ npm run build
 npm run preview -- --host 0.0.0.0 --port 4321
 ```
 
+## Analytics configuration
+
+The docs site reads analytics identifiers from environment variables:
+
+- `PUBLIC_GA_MEASUREMENT_ID` for Google Analytics.
+- `PUBLIC_GTM_ID` for Google Tag Manager.
+
 ## GitHub Pages deployment
 
 The GitHub Pages site is built and deployed by `.github/workflows/docs.yml`.
