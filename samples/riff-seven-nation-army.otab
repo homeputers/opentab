@@ -1,0 +1,16 @@
+format="opentab"
+version="0.1"
+title="Riff: Seven Nation Army"
+tempo_bpm=120
+time_signature="4/4"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="electric_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+---
+@track gtr1 voice v1
+# Single-note riff on the A string
+m1: | q (5:7) e (5:7) e (5:10) q (5:7) e (5:5) e (5:3) |
+m2: | q (5:2) e (5:3) e (5:2) h r |
