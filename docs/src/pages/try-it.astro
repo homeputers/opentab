@@ -1,22 +1,27 @@
 ---
+import { readFile, readdir } from 'node:fs/promises';
+import path from 'node:path';
 import Layout from '../components/Layout.astro';
 
-const sample = `format="opentab"
-version="0.1"
-title="Minimal Example"
-tempo_bpm=100
-time_signature="4/4"
+const samplesDir = new URL('../../../samples/', import.meta.url);
+const sampleFiles = (await readdir(samplesDir, { withFileTypes: true }))
+  .filter((entry) => entry.isFile())
+  .map((entry) => entry.name)
+  .sort((a, b) => a.localeCompare(b));
 
-[[tracks]]
-id="gtr1"
-name="Guitar"
-instrument="electric_guitar"
-tuning=["E2","A2","D3","G3","B3","E4"]
-capo=0
----
-@track gtr1 voice v1
-m1: | q (6:3) q (5:5) q (4:5) q (3:3) |
-m2: | q (6:3) q (5:5) q (4:5) q (3:3) |`;
+const samples = await Promise.all(
+  sampleFiles.map(async (file) => {
+    const content = await readFile(new URL(file, samplesDir), 'utf-8');
+    return {
+      name: file,
+      slug: path.parse(file).name,
+      content
+    };
+  })
+);
+
+const defaultSample = samples.find((sample) => sample.name === 'minimal.otab') ?? samples[0];
+const samplesJson = JSON.stringify(samples);
 ---
 
 <Layout title="Try It">
@@ -26,7 +31,15 @@ m2: | q (6:3) q (5:5) q (4:5) q (3:3) |`;
   <section class="try-grid">
     <div class="card">
       <h2>Input</h2>
-      <textarea id="otab-input" class="try-textarea" rows="18">{sample}</textarea>
+      <label for="sample-select">Load a sample</label>
+      <select id="sample-select">
+        {samples.map((sample) => (
+          <option value={sample.slug} selected={sample.slug === defaultSample.slug}>
+            {sample.name}
+          </option>
+        ))}
+      </select>
+      <textarea id="otab-input" class="try-textarea" rows="18">{defaultSample?.content}</textarea>
     </div>
     <div class="card">
       <h2>Parsed summary</h2>
@@ -58,7 +71,12 @@ m2: | q (6:3) q (5:5) q (4:5) q (3:3) |`;
     </div>
   </section>
 
+  <script type="application/json" id="sample-data">{samplesJson}</script>
   <script type="module">
+    const sampleData = document.getElementById('sample-data');
+    const samples = JSON.parse(sampleData.textContent);
+    const sampleSelect = document.getElementById('sample-select');
+
     const input = document.getElementById('otab-input');
     const summaryTracks = document.getElementById('summary-tracks');
     const summaryMeasures = document.getElementById('summary-measures');
@@ -153,6 +171,15 @@ m2: | q (6:3) q (5:5) q (4:5) q (3:3) |`;
       return { trackCount, measureCount, ascii, errors };
     };
 
+    const sampleMap = new Map(samples.map((sample) => [sample.slug, sample]));
+
+    const loadSample = (slug) => {
+      const sample = sampleMap.get(slug);
+      if (!sample) return;
+      input.value = sample.content;
+      render();
+    };
+
     const render = () => {
       const { trackCount, measureCount, ascii, errors } = parseOtab(input.value);
       summaryTracks.textContent = String(trackCount);
@@ -168,6 +195,9 @@ m2: | q (6:3) q (5:5) q (4:5) q (3:3) |`;
       errorEmpty.hidden = errors.length > 0;
     };
 
+    sampleSelect.addEventListener('change', (event) => {
+      loadSample(event.target.value);
+    });
     input.addEventListener('input', render);
     render();
   </script>
