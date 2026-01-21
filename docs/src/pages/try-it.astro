@@ -71,10 +71,10 @@ const samplesJson = JSON.stringify(samples);
     </div>
   </section>
 
-  <script type="application/json" id="sample-data">{samplesJson}</script>
+  <script type="application/json" id="sample-data" set:html={samplesJson}></script>
   <script type="module">
     const sampleData = document.getElementById('sample-data');
-    const samples = JSON.parse(sampleData.textContent);
+    const samples = JSON.parse(sampleData?.textContent ?? '[]');
     const sampleSelect = document.getElementById('sample-select');
 
     const input = document.getElementById('otab-input');
