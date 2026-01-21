@@ -3,6 +3,7 @@ import '../styles/global.css';
 
 const { title } = Astro.props;
 const base = import.meta.env.BASE_URL ?? '/';
+const gaMeasurementId = import.meta.env.PUBLIC_GA_MEASUREMENT_ID;
 ---
 <!doctype html>
 <html lang="en">
@@ -11,6 +12,19 @@ const base = import.meta.env.BASE_URL ?? '/';
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title ? `${title} | OpenTab` : 'OpenTab'}</title>
     <link rel="icon" type="image/ico" href={`${base}favicon.ico`} />
+    {
+      gaMeasurementId && (
+        <>
+          <script async src={`https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}`} />
+          <script
+            is:inline
+          >{`window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', '${gaMeasurementId}');`}</script>
+        </>
+      )
+    }
   </head>
   <body>
     <header class="site-header">
