@@ -1,0 +1,16 @@
+format="opentab"
+version="0.1"
+title="Riff: Sweet Child O' Mine (Intro)"
+tempo_bpm=125
+time_signature="4/4"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="electric_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+---
+@track gtr1 voice v1
+# Arpeggiated figure across the top strings
+m1: | e (4:7) e (3:9) e (2:8) e (3:9) e (4:7) e (3:9) e (2:8) e (3:9) |
+m2: | e (4:7) e (3:9) e (2:8) e (3:9) e (4:7) e (3:9) e (2:8) e (3:12) |

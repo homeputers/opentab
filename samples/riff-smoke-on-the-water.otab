@@ -1,0 +1,16 @@
+format="opentab"
+version="0.1"
+title="Riff: Smoke on the Water"
+tempo_bpm=110
+time_signature="4/4"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="electric_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+---
+@track gtr1 voice v1
+# Iconic double-stop riff (D and G strings)
+m1: | q [ (4:0) (3:3) ] q [ (4:3) (3:6) ] q [ (4:5) (3:8) ] q r |
+m2: | q [ (4:0) (3:3) ] q [ (4:3) (3:6) ] q [ (4:6) (3:9) ] q r |

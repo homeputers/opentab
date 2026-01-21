@@ -1,0 +1,16 @@
+format="opentab"
+version="0.1"
+title="Riff: Enter Sandman (Intro)"
+tempo_bpm=120
+time_signature="4/4"
+
+[[tracks]]
+id="gtr1"
+name="Guitar"
+instrument="electric_guitar"
+tuning=["E2","A2","D3","G3","B3","E4"]
+---
+@track gtr1 voice v1
+# Palm-muted open-low-E pattern with fretted notes
+m1: | e (6:0){pm=true} e (6:0){pm=true} e (6:0){pm=true} e (6:0){pm=true} e (6:2){pm=true} e (6:0){pm=true} e (6:3){pm=true} e (6:0){pm=true} |
+m2: | e (6:0){pm=true} e (6:0){pm=true} e (6:0){pm=true} e (6:0){pm=true} e (6:2){pm=true} e (6:0){pm=true} e (6:3){pm=true} e (6:0){pm=true} |
