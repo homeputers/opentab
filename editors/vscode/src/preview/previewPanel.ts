@@ -126,6 +126,7 @@ type TimingEntry = {
   endTick: number;
   elementIds: string[];
   type: 'event' | 'measure';
+  measureIndex?: number;
 };
 
 type TimingMap = {
@@ -287,17 +288,19 @@ const buildPreviewContent = (
       if (!timing) {
         continue;
       }
+      const stableMeasureId = `measure-${measure.index}`;
       const measureId = `measure-${trackKey}-${measure.index}`;
       timingMap.measures.push({
-        id: measureId,
+        id: stableMeasureId,
         startTick: timing.startTick,
         endTick: timing.endTick,
         elementIds: [measureId],
         type: 'measure',
+        measureIndex: measure.index,
       });
 
       htmlParts.push(
-        `<div class="measure" id="${measureId}"><div class="measure-label">// m${measure.index}</div>`,
+        `<div class="measure" id="${measureId}" data-measure-id="${stableMeasureId}" data-measure-index="${measure.index}"><div class="measure-label">// m${measure.index}</div>`,
       );
 
       const trackMeasure = measure.tracks[track.id];
@@ -444,6 +447,7 @@ const renderPreviewPanel = (filename: string, tabHtml: string): string => `<!DOC
       .measure {
         padding: 4px 6px;
         border-radius: 6px;
+        cursor: pointer;
       }
       .measure-label {
         color: var(--vscode-descriptionForeground);
@@ -489,6 +493,7 @@ const renderPreviewPanel = (filename: string, tabHtml: string): string => `<!DOC
       const progressBar = document.getElementById('progressBar');
       const timeLabel = document.getElementById('timeLabel');
       const playState = document.getElementById('playState');
+      const tabRoot = document.querySelector('.tab');
 
       let audioContext = null;
       let sampleBuffer = null;
@@ -879,6 +884,19 @@ const renderPreviewPanel = (filename: string, tabHtml: string): string => `<!DOC
         updateHighlights(clamped);
       };
 
+      const seekToSeconds = (targetSeconds) => {
+        if (!midiDurationSeconds) {
+          return;
+        }
+        const clamped = Math.max(0, Math.min(targetSeconds, midiDurationSeconds));
+        pausedAt = clamped;
+        updateProgress(clamped);
+        if (isPlaying) {
+          stopPlayback(false);
+          schedulePlayback(pausedAt);
+        }
+      };
+
       const tickProgress = () => {
         const time = currentPlaybackTime();
         updateProgress(time);
@@ -924,6 +942,30 @@ const renderPreviewPanel = (filename: string, tabHtml: string): string => `<!DOC
           stopPlayback(false);
           schedulePlayback(pausedAt);
         }
+      });
+
+      tabRoot?.addEventListener('click', (event) => {
+        if (!tempoMap.length) {
+          return;
+        }
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+          return;
+        }
+        const measureElement = target.closest('.measure');
+        if (!measureElement || !tabRoot.contains(measureElement)) {
+          return;
+        }
+        const measureIndex = Number(measureElement.dataset.measureIndex);
+        if (Number.isNaN(measureIndex)) {
+          return;
+        }
+        const entry = measureEntries.find((item) => item.measureIndex === measureIndex);
+        if (!entry) {
+          return;
+        }
+        const targetSeconds = ticksToSeconds(entry.startTick, tempoMap);
+        seekToSeconds(targetSeconds);
       });
 
       window.addEventListener('message', (event) => {
