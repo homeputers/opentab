@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import * as vscode from 'vscode';
 
+import { validate } from '../language-service/index.js';
 import { toMidi } from '../opentab-tools/converters-midi/index';
 import { parseOpenTab } from '../opentab-tools/parser/index';
 
@@ -26,7 +27,147 @@ const getErrorDetails = (
   return { message, lineNumber: match?.[1] };
 };
 
-const renderErrorPanel = (filename: string, error: unknown): string => {
+type ValidationSeverity = 'error' | 'warning' | 'info' | 'hint' | string;
+
+type ValidationIssue = {
+  message: string;
+  line: number;
+  startCol: number;
+  endCol: number;
+  severity?: ValidationSeverity;
+};
+
+const renderValidationSection = (
+  documentText: string,
+  diagnostics: ValidationIssue[],
+): string => {
+  const diagnosticsByLine = new Map<number, ValidationIssue[]>();
+  diagnostics.forEach((diagnostic) => {
+    const list = diagnosticsByLine.get(diagnostic.line) ?? [];
+    list.push(diagnostic);
+    diagnosticsByLine.set(diagnostic.line, list);
+  });
+
+  const lines = documentText.split(/\r?\n/);
+  const entries = Array.from(diagnosticsByLine.entries()).sort((a, b) => a[0] - b[0]);
+
+  const renderLine = (line: string, issues: ValidationIssue[]): string => {
+    if (issues.length === 0) {
+      return escapeHtml(line);
+    }
+    const safeLine = line.length > 0 ? line : ' ';
+    const maxLength = safeLine.length;
+    const sorted = [...issues].sort((a, b) => a.startCol - b.startCol);
+    let cursor = 0;
+    const parts: string[] = [];
+
+    for (const issue of sorted) {
+      const clampedStart = Math.max(
+        cursor,
+        Math.min(Math.max(issue.startCol, 0), maxLength),
+      );
+      const clampedEnd = Math.max(
+        clampedStart + 1,
+        Math.min(Math.max(issue.endCol, clampedStart + 1), maxLength),
+      );
+
+      if (clampedStart > cursor) {
+        parts.push(escapeHtml(safeLine.slice(cursor, clampedStart)));
+      }
+
+      const segment = safeLine.slice(clampedStart, clampedEnd) || ' ';
+      const severityClass =
+        issue.severity === 'warning' || issue.severity === 'info' || issue.severity === 'hint'
+          ? issue.severity
+          : 'error';
+      parts.push(
+        `<span class="diagnostic ${severityClass}" title="${escapeHtml(
+          issue.message,
+        )}">${escapeHtml(segment)}</span>`,
+      );
+      cursor = clampedEnd;
+    }
+
+    if (cursor < maxLength) {
+      parts.push(escapeHtml(safeLine.slice(cursor)));
+    }
+
+    return parts.join('');
+  };
+
+  const content = entries
+    .map(([lineIndex, issues]) => {
+      const lineText = lines[lineIndex] ?? '';
+      return `<div class="validation-line">
+  <span class="validation-line-number">${lineIndex + 1}</span>
+  <span class="validation-line-text">${renderLine(lineText, issues)}</span>
+</div>`;
+    })
+    .join('');
+
+  const emptyState = `<div class="validation-empty">No validation issues.</div>`;
+
+  return `<section class="validation">
+  <h2>Validation</h2>
+  <div class="validation-code">${content || emptyState}</div>
+</section>`;
+};
+
+const renderValidationStyles = (): string => `
+      .validation {
+        border: 1px solid var(--vscode-editorWidget-border);
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 16px;
+        background: var(--vscode-editor-background);
+      }
+      .validation h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+      }
+      .validation-code {
+        font-family: var(--vscode-editor-font-family, var(--vscode-font-family));
+        white-space: pre;
+      }
+      .validation-line {
+        display: flex;
+        gap: 12px;
+      }
+      .validation-line-number {
+        color: var(--vscode-descriptionForeground);
+        min-width: 3ch;
+        text-align: right;
+        user-select: none;
+      }
+      .validation-line-text {
+        flex: 1;
+      }
+      .validation-empty {
+        color: var(--vscode-descriptionForeground);
+      }
+      .diagnostic {
+        text-decoration-line: underline;
+        text-decoration-style: wavy;
+        text-decoration-thickness: 1.5px;
+        text-decoration-skip-ink: none;
+      }
+      .diagnostic.error {
+        text-decoration-color: var(--vscode-errorForeground);
+      }
+      .diagnostic.warning {
+        text-decoration-color: var(--vscode-editorWarning-foreground, #f1c40f);
+      }
+      .diagnostic.info,
+      .diagnostic.hint {
+        text-decoration-color: var(--vscode-editorInfo-foreground, #3794ff);
+      }
+`;
+
+const renderErrorPanel = (
+  filename: string,
+  error: unknown,
+  validationHtml: string,
+): string => {
   const details = getErrorDetails(error);
   const lineInfo = details.lineNumber
     ? `<p class="error-line">Line: ${escapeHtml(details.lineNumber)}</p>`
@@ -68,6 +209,7 @@ const renderErrorPanel = (filename: string, error: unknown): string => {
         margin: 8px 0 0 0;
         font-weight: 600;
       }
+      ${renderValidationStyles()}
     </style>
   </head>
   <body>
@@ -78,6 +220,7 @@ const renderErrorPanel = (filename: string, error: unknown): string => {
       <p class="error-message">${escapeHtml(details.message)}</p>
       ${lineInfo}
     </div>
+    ${validationHtml}
   </body>
 </html>`;
 };
@@ -359,7 +502,11 @@ const buildPreviewContent = (
   return { html: htmlParts.join(''), timingMap };
 };
 
-const renderPreviewPanel = (filename: string, tabHtml: string): string => `<!DOCTYPE html>
+const renderPreviewPanel = (
+  filename: string,
+  tabHtml: string,
+  validationHtml: string,
+): string => `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -467,11 +614,13 @@ const renderPreviewPanel = (filename: string, tabHtml: string): string => `<!DOC
       .measure.measure-active {
         background: var(--vscode-editor-inactiveSelectionBackground);
       }
+      ${renderValidationStyles()}
     </style>
   </head>
   <body>
     <h1>${PANEL_TITLE}</h1>
     <div class="filename">${escapeHtml(filename)}</div>
+    ${validationHtml}
     <section class="player">
       <div class="controls">
         <button id="playButton">Play</button>
@@ -1055,19 +1204,21 @@ export const updatePreview = (documentText: string): void => {
   }
 
   const filename = getFilename();
+  const diagnostics = validate(documentText) as ValidationIssue[];
+  const validationHtml = renderValidationSection(documentText, diagnostics);
 
   try {
     const document = parseOpenTab(documentText) as OpenTabDocument;
     const { html, timingMap } = buildPreviewContent(document);
     const midiBytes = toMidi(document);
-    panel.webview.html = renderPreviewPanel(filename, html);
+    panel.webview.html = renderPreviewPanel(filename, html, validationHtml);
     void panel.webview.postMessage({
       type: 'midiData',
       data: toBase64(midiBytes),
       timingMap,
     });
   } catch (error) {
-    panel.webview.html = renderErrorPanel(filename, error);
+    panel.webview.html = renderErrorPanel(filename, error, validationHtml);
   }
 };
 
