@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import * as vscode from 'vscode';
 import { format, validate } from './language-service/index.js';
 import { toAsciiTab } from './opentab-tools/converters-ascii/index.js';
+import { fromGpx } from './opentab-tools/converters-guitarpro/index.js';
 import { toMusicXml } from './opentab-tools/converters-musicxml/index.js';
 import { toMidi } from './opentab-tools/converters-midi/index.js';
 import { OpenTabParseError, parseOpenTab } from './opentab-tools/parser/index.js';
@@ -151,6 +152,40 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
+  const importGuitarProCommand = vscode.commands.registerCommand(
+    'opentab.importGuitarPro',
+    async () => {
+      const sourceUri = await promptForGuitarProFile();
+      if (!sourceUri) {
+        return;
+      }
+
+      let convertedText = '';
+      try {
+        const fileBytes = await vscode.workspace.fs.readFile(sourceUri);
+        convertedText = await fromGpx(fileBytes);
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to import Guitar Pro file.';
+        void vscode.window.showErrorMessage(`OpenTab: ${message}`);
+        return;
+      }
+
+      const targetUri = await getDefaultImportTargetUri(sourceUri);
+      if (!targetUri) {
+        return;
+      }
+
+      await vscode.workspace.fs.writeFile(
+        targetUri,
+        Buffer.from(convertedText, 'utf8'),
+      );
+      const document = await vscode.workspace.openTextDocument(targetUri);
+      await vscode.window.showTextDocument(document);
+      void vscode.window.showInformationMessage('OpenTab: Guitar Pro import complete.');
+    },
+  );
+
   const changeDisposable = vscode.workspace.onDidChangeTextDocument((event) => {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.uri.toString() !== event.document.uri.toString()) {
@@ -189,6 +224,7 @@ export function activate(context: vscode.ExtensionContext): void {
     exportMidiCommand,
     exportMusicXmlCommand,
     playMidiCommand,
+    importGuitarProCommand,
     changeDisposable,
     activeEditorDisposable,
   );
@@ -324,6 +360,43 @@ function openWithSystemApp(filePath: string): boolean {
     void error;
     return false;
   }
+}
+
+async function promptForGuitarProFile(): Promise<vscode.Uri | undefined> {
+  const options: vscode.OpenDialogOptions = {
+    canSelectMany: false,
+    openLabel: 'Import',
+    filters: {
+      'Guitar Pro (GPX)': ['gpx'],
+    },
+  };
+  const result = await vscode.window.showOpenDialog(options);
+  return result?.[0];
+}
+
+async function getDefaultImportTargetUri(
+  sourceUri: vscode.Uri,
+): Promise<vscode.Uri | undefined> {
+  const sourcePath = sourceUri.fsPath;
+  const baseName = path.parse(sourcePath).name;
+  const directory = path.dirname(sourcePath);
+  const targetUri = vscode.Uri.file(path.join(directory, `${baseName}.otab`));
+
+  try {
+    await vscode.workspace.fs.stat(targetUri);
+    const choice = await vscode.window.showWarningMessage(
+      `OpenTab: ${path.basename(targetUri.fsPath)} already exists. Overwrite?`,
+      'Overwrite',
+      'Cancel',
+    );
+    if (choice !== 'Overwrite') {
+      return undefined;
+    }
+  } catch (error) {
+    void error;
+  }
+
+  return targetUri;
 }
 
 export function deactivate(): void {}
