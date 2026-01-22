@@ -11,6 +11,7 @@ reference implementations and supporting utilities for the OpenTab spec.
 - `language-service`: shared validation and formatting for editors.
 - `converters-ascii`: converter utilities for ASCII tab formats.
 - `converters-midi`: converter utilities for MIDI workflows.
+- `converters-musicxml`: converter utilities for MusicXML exports.
 - `opentab`: CLI and user-facing tooling for OpenTab.
 
 ## Common commands

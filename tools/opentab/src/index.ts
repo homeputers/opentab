@@ -7,6 +7,7 @@ import { Command } from "commander";
 
 import { toAsciiTab } from "@opentab/converters-ascii";
 import { toMidi } from "@opentab/converters-midi";
+import { toMusicXml } from "@opentab/converters-musicxml";
 import { formatOtab } from "@opentab/formatter";
 import { parseOpenTab } from "@opentab/parser";
 
@@ -100,6 +101,27 @@ toCommand
       await fs.writeFile(outputPath, Buffer.from(midiData));
     } catch (error) {
       writeErrorAndExit(`MIDI conversion failed: ${formatError(error)}`);
+    }
+  });
+
+toCommand
+  .command("musicxml")
+  .description("Render MusicXML from an OpenTab file")
+  .argument("<file>", "OpenTab file")
+  .option("-o, --output <file>", "Output MusicXML file path")
+  .action(async (filePath: string, options: { output?: string }) => {
+    try {
+      const source = await readSource(filePath);
+      const document = parseOpenTab(source);
+      const musicXml = toMusicXml(document);
+      if (options.output) {
+        const outputPath = path.resolve(options.output);
+        await fs.writeFile(outputPath, musicXml, "utf8");
+      } else {
+        writeStdout(musicXml);
+      }
+    } catch (error) {
+      writeErrorAndExit(`MusicXML conversion failed: ${formatError(error)}`);
     }
   });
 
