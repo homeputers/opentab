@@ -66,6 +66,10 @@
         "title": "OpenTab: Export MIDI..."
       },
       {
+        "command": "opentab.exportMusicXml",
+        "title": "OpenTab: Export MusicXML..."
+      },
+      {
         "command": "opentab.playMidi",
         "title": "OpenTab: Play MIDI"
       }
@@ -101,6 +105,10 @@
           "when": "resourceLangId == opentab"
         },
         {
+          "command": "opentab.exportMusicXml",
+          "when": "resourceLangId == opentab"
+        },
+        {
           "command": "opentab.exportAscii",
           "when": "resourceLangId == opentab"
         },
@@ -120,6 +128,10 @@
         },
         {
           "command": "opentab.exportMidi",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.exportMusicXml",
           "when": "resourceLangId == opentab"
         },
         {
