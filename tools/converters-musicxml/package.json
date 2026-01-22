@@ -1,10 +1,7 @@
 {
-  "name": "opentab",
+  "name": "@opentab/converters-musicxml",
   "version": "0.0.1",
   "type": "module",
-  "bin": {
-    "opentab": "./dist/index.js"
-  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -14,15 +11,10 @@
     }
   },
   "dependencies": {
-    "@opentab/converters-ascii": "workspace:*",
-    "@opentab/converters-midi": "workspace:*",
-    "@opentab/converters-musicxml": "workspace:*",
-    "@opentab/formatter": "workspace:*",
-    "@opentab/parser": "workspace:*",
-    "commander": "^12.1.0"
+    "@opentab/ast": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2"
+    "@opentab/parser": "workspace:*"
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts",
