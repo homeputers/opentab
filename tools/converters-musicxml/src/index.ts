@@ -290,12 +290,14 @@ const buildStaffTuning = (track: Track, stringCount: number): string[] => {
     output.push(
       `  <staff-tuning line="${i + 1}">`,
       `    <tuning-step>${pitch.step}</tuning-step>`,
-      pitch.alter ? `    <tuning-alter>${pitch.alter}</tuning-alter>` : null,
       `    <tuning-octave>${pitch.octave}</tuning-octave>`,
       "  </staff-tuning>"
     );
+    if (pitch.alter) {
+      output.splice(output.length - 2, 0, `    <tuning-alter>${pitch.alter}</tuning-alter>`);
+    }
   }
-  return output.filter((line): line is string => Boolean(line));
+  return output;
 };
 
 const buildAttributes = (
