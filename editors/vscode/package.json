@@ -45,6 +45,8 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "fast-xml-parser": "^4.5.3",
+    "jszip": "^3.10.1",
     "midi-file": "^1.2.4"
   },
   "contributes": {
@@ -72,6 +74,10 @@
       {
         "command": "opentab.playMidi",
         "title": "OpenTab: Play MIDI"
+      },
+      {
+        "command": "opentab.importGuitarPro",
+        "title": "OpenTab: Import Guitar Pro..."
       }
     ],
     "languages": [
