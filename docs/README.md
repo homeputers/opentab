@@ -23,8 +23,8 @@ npm run preview -- --host 0.0.0.0 --port 4321
 
 The docs site reads analytics identifiers from environment variables:
 
-- `PUBLIC_GA_MEASUREMENT_ID` for Google Analytics.
-- `PUBLIC_GTM_ID` for Google Tag Manager.
+- `PUBLIC_GA_MEASUREMENT_ID` (or `GA_MEASUREMENT_ID`) for Google Analytics.
+- `PUBLIC_GTM_ID` (or `GTM_ID`) for Google Tag Manager.
 
 ## GitHub Pages deployment
 
