@@ -398,7 +398,7 @@ export const fromGpx = async (data: Buffer | Uint8Array | ArrayBuffer): Promise<
     lines.push(`id=\"${escapeOtabString(track.id)}\"`);
     lines.push(`name=\"${escapeOtabString(track.name)}\"`);
     lines.push(`instrument=\"${escapeOtabString(track.instrument)}\"`);
-    lines.push(`tuning=[${track.tuning.map((note) => `\"${note}\"`).join(",")}]");
+    lines.push(`tuning=[${track.tuning.map((note) => `\"${note}\"`).join(",")}]`);
     lines.push("");
   });
 
