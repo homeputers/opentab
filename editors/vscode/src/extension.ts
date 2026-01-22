@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import * as vscode from 'vscode';
 import { format, validate } from './language-service/index.js';
 import { toAsciiTab } from './opentab-tools/converters-ascii/index.js';
+import { toMusicXml } from './opentab-tools/converters-musicxml/index.js';
 import { toMidi } from './opentab-tools/converters-midi/index.js';
 import { OpenTabParseError, parseOpenTab } from './opentab-tools/parser/index.js';
 import { hasPreviewPanel, showPreview, updatePreview } from './preview/previewPanel';
@@ -93,6 +94,27 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
+  const exportMusicXmlCommand = vscode.commands.registerCommand(
+    'opentab.exportMusicXml',
+    async () => {
+      const document = getActiveOpenTabDocument();
+      if (!document) {
+        return;
+      }
+      const parsed = parseActiveDocument(document);
+      if (!parsed) {
+        return;
+      }
+      const musicXml = toMusicXml(parsed);
+      const saveUri = await promptForExportPath(document, 'musicxml');
+      if (!saveUri) {
+        return;
+      }
+      await vscode.workspace.fs.writeFile(saveUri, Buffer.from(musicXml, 'utf8'));
+      void vscode.window.showInformationMessage('OpenTab: MusicXML export saved.');
+    },
+  );
+
   const playMidiCommand = vscode.commands.registerCommand(
     'opentab.playMidi',
     async () => {
@@ -165,6 +187,7 @@ export function activate(context: vscode.ExtensionContext): void {
     previewCommand,
     exportAsciiCommand,
     exportMidiCommand,
+    exportMusicXmlCommand,
     playMidiCommand,
     changeDisposable,
     activeEditorDisposable,
