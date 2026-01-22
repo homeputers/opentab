@@ -2,7 +2,6 @@ import path from 'node:path';
 
 import * as vscode from 'vscode';
 
-import { toAsciiTab } from '../opentab-tools/converters-ascii/index';
 import { toMidi } from '../opentab-tools/converters-midi/index';
 import { parseOpenTab } from '../opentab-tools/parser/index';
 
@@ -83,7 +82,281 @@ const renderErrorPanel = (filename: string, error: unknown): string => {
 </html>`;
 };
 
-const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTYPE html>
+type TimeSignature = {
+  numerator: number;
+  denominator: number;
+};
+
+type Duration = {
+  base: 'w' | 'h' | 'q' | 'e' | 's' | 't';
+  dots?: number;
+  tuplet?: number;
+};
+
+type NoteRef = {
+  string: number;
+  fret: number;
+};
+
+type Event =
+  | { type: 'rest'; duration: Duration }
+  | { type: 'note'; duration: Duration; note: NoteRef }
+  | { type: 'chord'; duration: Duration; chord: NoteRef[] };
+
+type TrackMeasure = {
+  voices: Record<string, Event[]>;
+};
+
+type Track = {
+  id: string;
+  name?: string;
+  tuning?: string[];
+  capo?: number;
+};
+
+type OpenTabDocument = {
+  header: { tempo_bpm?: number; time_signature?: TimeSignature };
+  tracks: Track[];
+  measures: { index: number; tracks: Record<string, TrackMeasure> }[];
+};
+
+type TimingEntry = {
+  id: string;
+  startTick: number;
+  endTick: number;
+  elementIds: string[];
+  type: 'event' | 'measure';
+};
+
+type TimingMap = {
+  events: TimingEntry[];
+  measures: TimingEntry[];
+};
+
+const DEFAULT_STRING_COUNT = 6;
+const DEFAULT_TIME_SIGNATURE = { numerator: 4, denominator: 4 } as const;
+const PPQ = 480;
+
+const sanitizeId = (value: string): string =>
+  value.replace(/[^a-zA-Z0-9_-]/g, '-');
+
+const durationToTicks = (duration: Duration, ppq = PPQ): number => {
+  const baseTicks: Record<Duration['base'], number> = {
+    w: ppq * 4,
+    h: ppq * 2,
+    q: ppq,
+    e: ppq / 2,
+    s: ppq / 4,
+    t: ppq / 8,
+  };
+
+  let ticks = baseTicks[duration.base];
+  const dots = duration.dots ?? 0;
+  let dotFactor = 1;
+  let current = 1;
+  for (let i = 0; i < dots; i += 1) {
+    current *= 0.5;
+    dotFactor += current;
+  }
+  ticks *= dotFactor;
+
+  if (duration.tuplet) {
+    ticks *= 2 / duration.tuplet;
+  }
+
+  return Math.max(1, Math.round(ticks));
+};
+
+const getTrackStringCount = (track: Track, document: OpenTabDocument): number => {
+  if (track.tuning && track.tuning.length > 0) {
+    return track.tuning.length;
+  }
+
+  let maxString = 0;
+  for (const measure of document.measures) {
+    const trackMeasure = measure.tracks[track.id];
+    if (!trackMeasure) {
+      continue;
+    }
+    for (const events of Object.values(trackMeasure.voices)) {
+      for (const event of events) {
+        if (event.type === 'note') {
+          maxString = Math.max(maxString, event.note.string);
+        } else if (event.type === 'chord') {
+          for (const note of event.chord) {
+            maxString = Math.max(maxString, note.string);
+          }
+        }
+      }
+    }
+  }
+
+  return maxString || DEFAULT_STRING_COUNT;
+};
+
+const getLineLabels = (track: Track, stringCount: number): string[] => {
+  if (track.tuning && track.tuning.length > 0) {
+    return [...track.tuning].reverse();
+  }
+
+  return Array.from({ length: stringCount }, (_, index) => `S${index + 1}`);
+};
+
+const noteToSegment = (note: NoteRef, width: number, lineIndex: number): string =>
+  lineIndex === note.string - 1 ? String(note.fret).padEnd(width, '-') : '-'.repeat(width);
+
+const renderEventSegments = (event: Event, stringCount: number): string[] => {
+  if (event.type === 'rest') {
+    return Array.from({ length: stringCount }, () => '-');
+  }
+
+  if (event.type === 'note') {
+    const width = String(event.note.fret).length;
+    return Array.from({ length: stringCount }, (_, lineIndex) =>
+      noteToSegment(event.note, width, lineIndex),
+    );
+  }
+
+  const widths = event.chord.map((note) => String(note.fret).length);
+  const width = Math.max(...widths, 1);
+  return Array.from({ length: stringCount }, (_, lineIndex) => {
+    const note = event.chord.find((entry) => entry.string === lineIndex + 1);
+    if (!note) {
+      return '-'.repeat(width);
+    }
+    return String(note.fret).padEnd(width, '-');
+  });
+};
+
+const buildMeasureTimings = (
+  document: OpenTabDocument,
+): Map<number, { startTick: number; endTick: number }> => {
+  const timeSignature = document.header.time_signature ?? DEFAULT_TIME_SIGNATURE;
+  const beatsPerMeasure = timeSignature.numerator * (4 / timeSignature.denominator);
+  const expectedMeasureTicks = PPQ * beatsPerMeasure;
+
+  let measureStart = 0;
+  const measureTimings = new Map<number, { startTick: number; endTick: number }>();
+
+  for (const measure of document.measures) {
+    let maxVoiceEnd = measureStart;
+    for (const trackMeasure of Object.values(measure.tracks)) {
+      for (const events of Object.values(trackMeasure.voices)) {
+        let cursor = measureStart;
+        for (const event of events) {
+          cursor += durationToTicks(event.duration);
+        }
+        if (cursor > maxVoiceEnd) {
+          maxVoiceEnd = cursor;
+        }
+      }
+    }
+
+    const measureLength = Math.max(expectedMeasureTicks, maxVoiceEnd - measureStart);
+    measureTimings.set(measure.index, {
+      startTick: measureStart,
+      endTick: measureStart + measureLength,
+    });
+    measureStart += measureLength;
+  }
+
+  return measureTimings;
+};
+
+const buildPreviewContent = (
+  document: OpenTabDocument,
+): { html: string; timingMap: TimingMap } => {
+  const measureTimings = buildMeasureTimings(document);
+  const timingMap: TimingMap = { events: [], measures: [] };
+  const htmlParts: string[] = [];
+
+  document.tracks.forEach((track, trackIndex) => {
+    const stringCount = getTrackStringCount(track, document);
+    const lineLabels = getLineLabels(track, stringCount);
+    const trackKey = sanitizeId(track.id || `track-${trackIndex}`);
+
+    htmlParts.push('<div class="track">');
+    htmlParts.push(
+      `<div class="track-header"># Track: ${escapeHtml(
+        track.name ?? track.id ?? `Track ${trackIndex + 1}`,
+      )}</div>`,
+    );
+
+    for (const measure of document.measures) {
+      const timing = measureTimings.get(measure.index);
+      if (!timing) {
+        continue;
+      }
+      const measureId = `measure-${trackKey}-${measure.index}`;
+      timingMap.measures.push({
+        id: measureId,
+        startTick: timing.startTick,
+        endTick: timing.endTick,
+        elementIds: [measureId],
+        type: 'measure',
+      });
+
+      htmlParts.push(
+        `<div class="measure" id="${measureId}"><div class="measure-label">// m${measure.index}</div>`,
+      );
+
+      const trackMeasure = measure.tracks[track.id];
+      const events = trackMeasure?.voices?.v1 ?? [];
+      const lineSegments: string[][] = Array.from({ length: stringCount }, () => []);
+
+      let cursor = timing.startTick;
+      if (events.length === 0) {
+        for (let lineIndex = 0; lineIndex < stringCount; lineIndex += 1) {
+          lineSegments[lineIndex].push('-');
+        }
+      } else {
+        events.forEach((event, eventIndex) => {
+          const segments = renderEventSegments(event, stringCount);
+          const separator = eventIndex === events.length - 1 ? '' : '-';
+          const eventId = `event-${trackKey}-${measure.index}-${eventIndex}`;
+          const elementIds: string[] = [];
+          const durationTicks = durationToTicks(event.duration);
+
+          for (let lineIndex = 0; lineIndex < stringCount; lineIndex += 1) {
+            const elementId = `${eventId}-line-${lineIndex}`;
+            elementIds.push(elementId);
+            lineSegments[lineIndex].push(
+              `<span id="${elementId}" class="event-segment" data-event-id="${eventId}">${escapeHtml(
+                segments[lineIndex],
+              )}</span>${separator}`,
+            );
+          }
+
+          timingMap.events.push({
+            id: eventId,
+            startTick: cursor,
+            endTick: cursor + durationTicks,
+            elementIds,
+            type: 'event',
+          });
+          cursor += durationTicks;
+        });
+      }
+
+      lineSegments.forEach((segments, lineIndex) => {
+        const label = lineLabels[lineIndex] ?? `S${lineIndex + 1}`;
+        htmlParts.push(
+          `<div class="tab-line">${escapeHtml(
+            label.padEnd(3, ' '),
+          )}|${segments.join('')}|</div>`,
+        );
+      });
+
+      htmlParts.push('</div>');
+    }
+
+    htmlParts.push('</div>');
+  });
+
+  return { html: htmlParts.join(''), timingMap };
+};
+
+const renderPreviewPanel = (filename: string, tabHtml: string): string => `<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -153,6 +426,43 @@ const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTY
         border-radius: 6px;
         white-space: pre-wrap;
       }
+      .tab {
+        font-family: var(--vscode-editor-font-family, var(--vscode-font-family));
+        white-space: pre;
+        background: var(--vscode-editor-background);
+        border: 1px solid var(--vscode-editorWidget-border);
+        padding: 12px;
+        border-radius: 6px;
+      }
+      .track + .track {
+        margin-top: 16px;
+      }
+      .track-header {
+        margin-bottom: 8px;
+        color: var(--vscode-descriptionForeground);
+      }
+      .measure {
+        padding: 4px 6px;
+        border-radius: 6px;
+      }
+      .measure-label {
+        color: var(--vscode-descriptionForeground);
+        margin-bottom: 4px;
+      }
+      .tab-line {
+        font-family: inherit;
+      }
+      .event-segment {
+        border-radius: 3px;
+        padding: 1px 0;
+        transition: background 0.1s ease;
+      }
+      .event-segment.event-active {
+        background: var(--vscode-editor-findMatchHighlightBackground);
+      }
+      .measure.measure-active {
+        background: var(--vscode-editor-inactiveSelectionBackground);
+      }
     </style>
   </head>
   <body>
@@ -170,7 +480,7 @@ const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTY
         <span id="timeLabel" class="status">0:00 / 0:00</span>
       </div>
     </section>
-    <pre>${escapeHtml(ascii)}</pre>
+    <div class="tab">${tabHtml}</div>
     <script>
       const vscode = acquireVsCodeApi();
       const playButton = document.getElementById('playButton');
@@ -190,6 +500,11 @@ const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTY
       let pausedAt = 0;
       let animationFrame = 0;
       let activeSources = [];
+      let tempoMap = [];
+      let eventEntries = [];
+      let measureEntries = [];
+      const activeEventElements = new Set();
+      const activeMeasureElements = new Set();
 
       const baseNote = 60;
       const soundFontSample =
@@ -382,8 +697,7 @@ const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTY
         );
       };
 
-      const buildNotes = (parsed) => {
-        const tempoMap = buildTempoMap(parsed.tempoEvents, parsed.ticksPerBeat);
+      const buildNotes = (parsed, tempoMap) => {
         const notes = [];
         const active = new Map();
 
@@ -413,6 +727,67 @@ const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTY
           }
         }
         return { notes, durationSeconds };
+      };
+
+      const secondsToTicks = (seconds, map) => {
+        if (!map.length) {
+          return 0;
+        }
+        const segment = map
+          .slice()
+          .reverse()
+          .find((entry) => seconds >= entry.startSeconds);
+        if (!segment) {
+          return 0;
+        }
+        return (
+          segment.startTick +
+          Math.floor((seconds - segment.startSeconds) / segment.secondsPerTick)
+        );
+      };
+
+      const syncActiveElements = (next, active, className) => {
+        active.forEach((element) => {
+          if (!next.has(element)) {
+            element.classList.remove(className);
+          }
+        });
+        next.forEach((element) => {
+          if (!active.has(element)) {
+            element.classList.add(className);
+          }
+        });
+        active.clear();
+        next.forEach((element) => active.add(element));
+      };
+
+      const updateHighlights = (time) => {
+        if (!tempoMap.length) {
+          return;
+        }
+        const tick = secondsToTicks(time, tempoMap);
+        const nextEventElements = new Set();
+        const nextMeasureElements = new Set();
+
+        for (const entry of eventEntries) {
+          if (tick >= entry.startTick && tick < entry.endTick) {
+            entry.elements.forEach((element) => nextEventElements.add(element));
+          }
+        }
+
+        for (const entry of measureEntries) {
+          if (tick >= entry.startTick && tick < entry.endTick) {
+            entry.elements.forEach((element) => nextMeasureElements.add(element));
+          }
+        }
+
+        syncActiveElements(nextEventElements, activeEventElements, 'event-active');
+        syncActiveElements(nextMeasureElements, activeMeasureElements, 'measure-active');
+      };
+
+      const clearHighlights = () => {
+        syncActiveElements(new Set(), activeEventElements, 'event-active');
+        syncActiveElements(new Set(), activeMeasureElements, 'measure-active');
       };
 
       const formatTime = (seconds) => {
@@ -445,6 +820,9 @@ const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTY
         playStartTime = 0;
         cancelAnimationFrame(animationFrame);
         updateProgress(resetPosition ? 0 : pausedAt);
+        if (resetPosition) {
+          clearHighlights();
+        }
         updateButtons();
         playState.textContent = resetPosition ? 'Stopped' : 'Paused';
       };
@@ -498,6 +876,7 @@ const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTY
         timeLabel.textContent = \`\${formatTime(clamped)} / \${formatTime(
           midiDurationSeconds,
         )}\`;
+        updateHighlights(clamped);
       };
 
       const tickProgress = () => {
@@ -555,9 +934,23 @@ const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTY
         try {
           const bytes = decodeBase64(message.data);
           const parsed = parseMidi(bytes);
-          const result = buildNotes(parsed);
+          tempoMap = buildTempoMap(parsed.tempoEvents, parsed.ticksPerBeat);
+          const result = buildNotes(parsed, tempoMap);
           midiNotes = result.notes;
           midiDurationSeconds = result.durationSeconds;
+          const timingMap = message.timingMap ?? { events: [], measures: [] };
+          eventEntries = timingMap.events.map((entry) => ({
+            ...entry,
+            elements: entry.elementIds
+              .map((id) => document.getElementById(id))
+              .filter(Boolean),
+          }));
+          measureEntries = timingMap.measures.map((entry) => ({
+            ...entry,
+            elements: entry.elementIds
+              .map((id) => document.getElementById(id))
+              .filter(Boolean),
+          }));
           pausedAt = 0;
           stopPlayback(true);
           updateProgress(0);
@@ -568,6 +961,7 @@ const renderPreviewPanel = (filename: string, ascii: string): string => `<!DOCTY
           console.error(error);
           playState.textContent = 'Failed to load MIDI';
         }
+        clearHighlights();
         updateButtons();
       });
     </script>
@@ -621,13 +1015,14 @@ export const updatePreview = (documentText: string): void => {
   const filename = getFilename();
 
   try {
-    const document = parseOpenTab(documentText);
-    const ascii = toAsciiTab(document);
+    const document = parseOpenTab(documentText) as OpenTabDocument;
+    const { html, timingMap } = buildPreviewContent(document);
     const midiBytes = toMidi(document);
-    panel.webview.html = renderPreviewPanel(filename, ascii);
+    panel.webview.html = renderPreviewPanel(filename, html);
     void panel.webview.postMessage({
       type: 'midiData',
       data: toBase64(midiBytes),
+      timingMap,
     });
   } catch (error) {
     panel.webview.html = renderErrorPanel(filename, error);
