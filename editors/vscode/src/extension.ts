@@ -10,6 +10,7 @@ import { hasPreviewPanel, showPreview, updatePreview } from './preview/previewPa
 export function activate(context: vscode.ExtensionContext): void {
   const diagnostics = vscode.languages.createDiagnosticCollection('opentab');
   let previewUpdateTimeout: NodeJS.Timeout | undefined;
+  const previewDebounceMs = 300;
 
   const saveDisposable = vscode.workspace.onDidSaveTextDocument((document) => {
     if (document.languageId !== 'opentab') {
@@ -141,7 +142,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }
     previewUpdateTimeout = setTimeout(() => {
       updatePreview(event.document.getText());
-    }, 200);
+    }, previewDebounceMs);
   });
 
   const activeEditorDisposable = vscode.window.onDidChangeActiveTextEditor(

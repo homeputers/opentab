@@ -644,6 +644,10 @@ const renderPreviewPanel = (
       const playState = document.getElementById('playState');
       const tabRoot = document.querySelector('.tab');
 
+      const AudioContextConstructor =
+        window.AudioContext || window.webkitAudioContext;
+      const MAX_POLYPHONY = 16;
+
       let audioContext = null;
       let sampleBuffer = null;
       let midiNotes = [];
@@ -659,6 +663,7 @@ const renderPreviewPanel = (
       let measureEntries = [];
       const activeEventElements = new Set();
       const activeMeasureElements = new Set();
+      let audioAvailable = Boolean(AudioContextConstructor);
 
       const baseNote = 60;
       const soundFontSample =
@@ -673,9 +678,19 @@ const renderPreviewPanel = (
         return bytes;
       };
 
+      const setAudioUnavailable = (reason) => {
+        audioAvailable = false;
+        playState.textContent = reason;
+        updateButtons();
+      };
+
       const ensureAudioContext = async () => {
+        if (!AudioContextConstructor) {
+          setAudioUnavailable('WebAudio unavailable');
+          throw new Error('WebAudio is not supported in this environment.');
+        }
         if (!audioContext) {
-          audioContext = new AudioContext();
+          audioContext = new AudioContextConstructor();
         }
         if (audioContext.state === 'suspended') {
           await audioContext.resume();
@@ -952,9 +967,40 @@ const renderPreviewPanel = (
       };
 
       const updateButtons = () => {
-        playButton.disabled = !midiNotes.length || isPlaying;
-        pauseButton.disabled = !isPlaying;
-        stopButton.disabled = !midiNotes.length;
+        playButton.disabled = !audioAvailable || !midiNotes.length || isPlaying;
+        pauseButton.disabled = !audioAvailable || !isPlaying;
+        stopButton.disabled = !audioAvailable || !midiNotes.length;
+      };
+
+      if (!audioAvailable) {
+        setAudioUnavailable('WebAudio unavailable');
+      }
+
+      const applyPolyphonyLimit = (notes, maxPolyphony) => {
+        if (maxPolyphony <= 0) {
+          return [];
+        }
+        if (notes.length <= maxPolyphony) {
+          return notes;
+        }
+        const sorted = notes.slice().sort((a, b) => a.startSeconds - b.startSeconds);
+        const filtered = [];
+        const active = [];
+
+        for (const note of sorted) {
+          for (let i = active.length - 1; i >= 0; i -= 1) {
+            if (active[i].endSeconds <= note.startSeconds) {
+              active.splice(i, 1);
+            }
+          }
+          if (active.length >= maxPolyphony) {
+            continue;
+          }
+          active.push(note);
+          filtered.push(note);
+        }
+
+        return filtered;
       };
 
       const stopPlayback = (resetPosition = true) => {
@@ -982,7 +1028,12 @@ const renderPreviewPanel = (
       };
 
       const schedulePlayback = async (offsetSeconds = 0) => {
-        await ensureAudioContext();
+        try {
+          await ensureAudioContext();
+        } catch (error) {
+          console.error(error);
+          return;
+        }
         activeSources = [];
         const now = audioContext.currentTime;
         playStartTime = now - offsetSeconds;
@@ -991,7 +1042,11 @@ const renderPreviewPanel = (
         playState.textContent = 'Playing';
         updateButtons();
 
-        for (const note of midiNotes) {
+        const notesToPlay = applyPolyphonyLimit(
+          midiNotes.filter((note) => note.endSeconds > offsetSeconds),
+          MAX_POLYPHONY,
+        );
+        for (const note of notesToPlay) {
           if (note.endSeconds <= offsetSeconds) {
             continue;
           }
@@ -1057,7 +1112,7 @@ const renderPreviewPanel = (
       };
 
       playButton.addEventListener('click', async () => {
-        if (!midiNotes.length) {
+        if (!midiNotes.length || !audioAvailable) {
           return;
         }
         if (isPlaying) {
@@ -1145,9 +1200,13 @@ const renderPreviewPanel = (
           pausedAt = 0;
           stopPlayback(true);
           updateProgress(0);
-          playState.textContent = midiNotes.length
-            ? 'Ready to play'
-            : 'No MIDI notes';
+          if (!audioAvailable) {
+            playState.textContent = 'WebAudio unavailable';
+          } else {
+            playState.textContent = midiNotes.length
+              ? 'Ready to play'
+              : 'No MIDI notes';
+          }
         } catch (error) {
           console.error(error);
           playState.textContent = 'Failed to load MIDI';
