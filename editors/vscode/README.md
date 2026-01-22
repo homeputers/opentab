@@ -69,3 +69,9 @@ See the root documentation and specification for OpenTab guidelines:
 
 - https://github.com/homeputers/opentab/blob/main/README.md
 - https://github.com/homeputers/opentab/blob/main/spec/
+
+## Webview message protocol
+
+The preview webview message contract is documented here:
+
+- [Webview Message Protocol](./docs/webview-message-protocol.md)
