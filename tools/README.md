@@ -12,6 +12,7 @@ reference implementations and supporting utilities for the OpenTab spec.
 - `converters-ascii`: converter utilities for ASCII tab formats.
 - `converters-midi`: converter utilities for MIDI workflows.
 - `converters-musicxml`: converter utilities for MusicXML exports.
+- `converters-guitarpro`: converter utilities for Guitar Pro imports.
 - `opentab`: CLI and user-facing tooling for OpenTab.
 
 ## Common commands

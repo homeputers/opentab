@@ -6,4 +6,5 @@ packages:
   - "converters-ascii"
   - "converters-midi"
   - "converters-musicxml"
+  - "converters-guitarpro"
   - "opentab"
