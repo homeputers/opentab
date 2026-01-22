@@ -6,6 +6,7 @@ import path from "node:path";
 import { Command } from "commander";
 
 import { toAsciiTab } from "@opentab/converters-ascii";
+import { fromGpx } from "@opentab/converters-guitarpro";
 import { toMidi } from "@opentab/converters-midi";
 import { toMusicXml } from "@opentab/converters-musicxml";
 import { formatOtab } from "@opentab/formatter";
@@ -72,6 +73,7 @@ program
   });
 
 const toCommand = program.command("to").description("Convert OpenTab files");
+const fromCommand = program.command("from").description("Import files into OpenTab");
 
 toCommand
   .command("ascii")
@@ -122,6 +124,26 @@ toCommand
       }
     } catch (error) {
       writeErrorAndExit(`MusicXML conversion failed: ${formatError(error)}`);
+    }
+  });
+
+fromCommand
+  .command("gpx")
+  .description("Import a Guitar Pro GPX file and output OpenTab")
+  .argument("<file>", "Guitar Pro GPX file")
+  .option("-o, --output <file>", "Output OpenTab file path")
+  .action(async (filePath: string, options: { output?: string }) => {
+    try {
+      const data = await fs.readFile(filePath);
+      const otab = await fromGpx(data);
+      if (options.output) {
+        const outputPath = path.resolve(options.output);
+        await fs.writeFile(outputPath, otab, "utf8");
+      } else {
+        writeStdout(otab);
+      }
+    } catch (error) {
+      writeErrorAndExit(`GPX import failed: ${formatError(error)}`);
     }
   });
 

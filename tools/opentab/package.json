@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@opentab/converters-ascii": "workspace:*",
+    "@opentab/converters-guitarpro": "workspace:*",
     "@opentab/converters-midi": "workspace:*",
     "@opentab/converters-musicxml": "workspace:*",
     "@opentab/formatter": "workspace:*",
