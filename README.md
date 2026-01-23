@@ -64,7 +64,12 @@ Existing options all fall short in different ways:
 **OpenTab is not:**
 - A visual engraving/layout format
 - A replacement for notation software
+- A full notation editor
 - An attempt to encode “ASCII tab with metadata”
+
+**Interchange notes:**
+- MusicXML export is lossy; some tab-specific details do not map cleanly.
+- Guitar Pro (`.gp*`) import is best effort and may require cleanup.
 
 ---
 
