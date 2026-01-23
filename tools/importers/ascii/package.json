@@ -1,0 +1,22 @@
+{
+  "name": "@opentab/importer-ascii",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "@opentab/formatter": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts",
+    "test": "vitest run --passWithNoTests",
+    "lint": "echo 'No lint configured'",
+    "clean": "rm -rf dist"
+  }
+}

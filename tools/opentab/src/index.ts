@@ -9,6 +9,7 @@ import { toAsciiTab } from "@opentab/converters-ascii";
 import { fromGpx } from "@opentab/converters-guitarpro";
 import { toMidi } from "@opentab/converters-midi";
 import { toMusicXml } from "@opentab/converters-musicxml";
+import { importAsciiTab } from "@opentab/importer-ascii";
 import { formatOtab } from "@opentab/formatter";
 import { parseOpenTab } from "@opentab/parser";
 
@@ -181,6 +182,41 @@ importCommand
       writeErrorAndExit(`GP import failed: ${formatError(error)}`);
     }
   });
+
+importCommand
+  .command("ascii")
+  .description("Import ASCII tablature and output OpenTab")
+  .argument("<file>", "ASCII tab file")
+  .option("-o, --output <file>", "Output OpenTab file path")
+  .option(
+    "--rhythm <strategy>",
+    "Rhythm strategy (unknown|fixed-eighth|column-grid)",
+    "unknown"
+  )
+  .action(
+    async (
+      filePath: string,
+      options: { output?: string; rhythm: "unknown" | "fixed-eighth" | "column-grid" }
+    ) => {
+      try {
+        const source = await readSource(filePath);
+        const result = importAsciiTab(source, { rhythmStrategy: options.rhythm });
+        if (result.warnings.length > 0) {
+          result.warnings.forEach((warning) => {
+            process.stderr.write(`Warning: ${warning}\n`);
+          });
+        }
+        if (options.output) {
+          const outputPath = path.resolve(options.output);
+          await fs.writeFile(outputPath, result.otab, "utf8");
+        } else {
+          writeStdout(result.otab);
+        }
+      } catch (error) {
+        writeErrorAndExit(`ASCII import failed: ${formatError(error)}`);
+      }
+    }
+  );
 
 program.parseAsync(process.argv).catch((error) => {
   writeErrorAndExit(`Command failed: ${formatError(error)}`);

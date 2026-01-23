@@ -18,6 +18,7 @@
     "@opentab/converters-guitarpro": "workspace:*",
     "@opentab/converters-midi": "workspace:*",
     "@opentab/converters-musicxml": "workspace:*",
+    "@opentab/importer-ascii": "workspace:*",
     "@opentab/formatter": "workspace:*",
     "@opentab/parser": "workspace:*",
     "commander": "^12.1.0"
