@@ -74,6 +74,7 @@ program
 
 const toCommand = program.command("to").description("Convert OpenTab files");
 const fromCommand = program.command("from").description("Import files into OpenTab");
+const importCommand = program.command("import").description("Import files into OpenTab");
 
 toCommand
   .command("ascii")
@@ -86,6 +87,20 @@ toCommand
       writeStdout(toAsciiTab(document));
     } catch (error) {
       writeErrorAndExit(`ASCII conversion failed: ${formatError(error)}`);
+    }
+  });
+
+program
+  .command("print")
+  .description("Print ASCII tablature from an OpenTab file")
+  .argument("<file>", "OpenTab file")
+  .action(async (filePath: string) => {
+    try {
+      const source = await readSource(filePath);
+      const document = parseOpenTab(source);
+      writeStdout(toAsciiTab(document));
+    } catch (error) {
+      writeErrorAndExit(`Print failed: ${formatError(error)}`);
     }
   });
 
@@ -144,6 +159,26 @@ fromCommand
       }
     } catch (error) {
       writeErrorAndExit(`GPX import failed: ${formatError(error)}`);
+    }
+  });
+
+importCommand
+  .command("gp")
+  .description("Import a Guitar Pro GPX file and output OpenTab")
+  .argument("<file>", "Guitar Pro GPX file")
+  .option("-o, --output <file>", "Output OpenTab file path")
+  .action(async (filePath: string, options: { output?: string }) => {
+    try {
+      const data = await fs.readFile(filePath);
+      const otab = await fromGpx(data);
+      if (options.output) {
+        const outputPath = path.resolve(options.output);
+        await fs.writeFile(outputPath, otab, "utf8");
+      } else {
+        writeStdout(otab);
+      }
+    } catch (error) {
+      writeErrorAndExit(`GP import failed: ${formatError(error)}`);
     }
   });
 
