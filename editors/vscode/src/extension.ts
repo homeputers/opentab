@@ -126,18 +126,18 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!document) {
         return;
       }
-      const parsed = parseActiveDocument(document);
-      if (!parsed) {
+      await exportPdf(document);
+    },
+  );
+
+  const printPdfCommand = vscode.commands.registerCommand(
+    'opentab.printPdf',
+    async () => {
+      const document = getActiveOpenTabDocument();
+      if (!document) {
         return;
       }
-      const { svg, width, height } = toSvgTab(parsed);
-      const pdfBytes = await svgToPdfBytes(svg, width, height);
-      const saveUri = await promptForExportPath(document, 'pdf');
-      if (!saveUri) {
-        return;
-      }
-      await vscode.workspace.fs.writeFile(saveUri, pdfBytes);
-      void vscode.window.showInformationMessage('OpenTab: PDF export saved.');
+      await exportPdf(document);
     },
   );
 
@@ -249,6 +249,7 @@ export function activate(context: vscode.ExtensionContext): void {
     exportMidiCommand,
     exportMusicXmlCommand,
     exportPdfCommand,
+    printPdfCommand,
     playMidiCommand,
     importGuitarProCommand,
     changeDisposable,
@@ -309,6 +310,21 @@ function parseActiveDocument(
     void vscode.window.showErrorMessage('OpenTab: Failed to parse document.');
     return null;
   }
+}
+
+async function exportPdf(document: vscode.TextDocument): Promise<void> {
+  const parsed = parseActiveDocument(document);
+  if (!parsed) {
+    return;
+  }
+  const { svg, width, height } = toSvgTab(parsed);
+  const pdfBytes = await svgToPdfBytes(svg, width, height);
+  const saveUri = await promptForExportPath(document, 'pdf');
+  if (!saveUri) {
+    return;
+  }
+  await vscode.workspace.fs.writeFile(saveUri, pdfBytes);
+  void vscode.window.showInformationMessage('OpenTab: PDF export saved.');
 }
 
 function getDocumentBaseName(document: vscode.TextDocument): string {
