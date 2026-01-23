@@ -78,6 +78,10 @@
         "title": "OpenTab: Export PDF..."
       },
       {
+        "command": "opentab.printPdf",
+        "title": "OpenTab: Print to PDF..."
+      },
+      {
         "command": "opentab.playMidi",
         "title": "OpenTab: Play MIDI"
       },
@@ -125,6 +129,10 @@
           "when": "resourceLangId == opentab"
         },
         {
+          "command": "opentab.printPdf",
+          "when": "resourceLangId == opentab"
+        },
+        {
           "command": "opentab.exportAscii",
           "when": "resourceLangId == opentab"
         },
@@ -152,6 +160,10 @@
         },
         {
           "command": "opentab.exportPdf",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.printPdf",
           "when": "resourceLangId == opentab"
         },
         {
