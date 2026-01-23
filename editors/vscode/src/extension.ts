@@ -1,11 +1,14 @@
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import * as vscode from 'vscode';
+import PDFDocument from 'pdfkit';
+import SVGtoPDF from 'svg-to-pdfkit';
 import { format, validate } from './language-service/index.js';
 import { toAsciiTab } from './opentab-tools/converters-ascii/index.js';
 import { fromGpx } from './opentab-tools/converters-guitarpro/index.js';
 import { toMusicXml } from './opentab-tools/converters-musicxml/index.js';
 import { toMidi } from './opentab-tools/converters-midi/index.js';
+import { toSvgTab } from './opentab-tools/converters-svg/index.js';
 import { OpenTabParseError, parseOpenTab } from './opentab-tools/parser/index.js';
 import { hasPreviewPanel, showPreview, updatePreview } from './preview/previewPanel';
 
@@ -116,6 +119,28 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
+  const exportPdfCommand = vscode.commands.registerCommand(
+    'opentab.exportPdf',
+    async () => {
+      const document = getActiveOpenTabDocument();
+      if (!document) {
+        return;
+      }
+      const parsed = parseActiveDocument(document);
+      if (!parsed) {
+        return;
+      }
+      const { svg, width, height } = toSvgTab(parsed);
+      const pdfBytes = await svgToPdfBytes(svg, width, height);
+      const saveUri = await promptForExportPath(document, 'pdf');
+      if (!saveUri) {
+        return;
+      }
+      await vscode.workspace.fs.writeFile(saveUri, pdfBytes);
+      void vscode.window.showInformationMessage('OpenTab: PDF export saved.');
+    },
+  );
+
   const playMidiCommand = vscode.commands.registerCommand(
     'opentab.playMidi',
     async () => {
@@ -223,6 +248,7 @@ export function activate(context: vscode.ExtensionContext): void {
     exportAsciiCommand,
     exportMidiCommand,
     exportMusicXmlCommand,
+    exportPdfCommand,
     playMidiCommand,
     importGuitarProCommand,
     changeDisposable,
@@ -360,6 +386,33 @@ function openWithSystemApp(filePath: string): boolean {
     void error;
     return false;
   }
+}
+
+async function svgToPdfBytes(
+  svg: string,
+  width: number,
+  height: number,
+): Promise<Uint8Array> {
+  const doc = new PDFDocument({
+    size: [Math.ceil(width), Math.ceil(height)],
+    margin: 0,
+  });
+  const chunks: Buffer[] = [];
+
+  return new Promise((resolve, reject) => {
+    doc.on('data', (chunk) => {
+      chunks.push(Buffer.from(chunk));
+    });
+    doc.on('error', (error) => {
+      reject(error);
+    });
+    doc.on('end', () => {
+      resolve(Buffer.concat(chunks));
+    });
+
+    SVGtoPDF(doc, svg, 0, 0, { assumePt: true });
+    doc.end();
+  });
 }
 
 async function promptForGuitarProFile(): Promise<vscode.Uri | undefined> {

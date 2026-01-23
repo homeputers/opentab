@@ -47,7 +47,9 @@
   "dependencies": {
     "fast-xml-parser": "^4.5.3",
     "jszip": "^3.10.1",
-    "midi-file": "^1.2.4"
+    "midi-file": "^1.2.4",
+    "pdfkit": "^0.16.0",
+    "svg-to-pdfkit": "^0.1.8"
   },
   "contributes": {
     "commands": [
@@ -70,6 +72,10 @@
       {
         "command": "opentab.exportMusicXml",
         "title": "OpenTab: Export MusicXML..."
+      },
+      {
+        "command": "opentab.exportPdf",
+        "title": "OpenTab: Export PDF..."
       },
       {
         "command": "opentab.playMidi",
@@ -115,6 +121,10 @@
           "when": "resourceLangId == opentab"
         },
         {
+          "command": "opentab.exportPdf",
+          "when": "resourceLangId == opentab"
+        },
+        {
           "command": "opentab.exportAscii",
           "when": "resourceLangId == opentab"
         },
@@ -138,6 +148,10 @@
         },
         {
           "command": "opentab.exportMusicXml",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.exportPdf",
           "when": "resourceLangId == opentab"
         },
         {

@@ -4,6 +4,7 @@ packages:
   - "formatter"
   - "language-service"
   - "converters-ascii"
+  - "converters-svg"
   - "converters-midi"
   - "converters-musicxml"
   - "converters-guitarpro"

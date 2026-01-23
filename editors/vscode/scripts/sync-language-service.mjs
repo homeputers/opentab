@@ -37,9 +37,22 @@ const midiConverterSourceDir = path.resolve(
   'converters-midi',
   'src',
 );
+const svgConverterSourceDir = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'tools',
+  'converters-svg',
+  'src',
+);
 const midiConverterTargetDir = path.resolve(
   toolsTargetDir,
   'converters-midi',
+);
+const svgConverterTargetDir = path.resolve(
+  toolsTargetDir,
+  'converters-svg',
 );
 const musicXmlConverterSourceDir = path.resolve(
   __dirname,
@@ -75,6 +88,7 @@ await rm(toolsTargetDir, { recursive: true, force: true });
 await cp(parserSourceDir, parserTargetDir, { recursive: true });
 await cp(converterSourceDir, converterTargetDir, { recursive: true });
 await cp(midiConverterSourceDir, midiConverterTargetDir, { recursive: true });
+await cp(svgConverterSourceDir, svgConverterTargetDir, { recursive: true });
 await cp(musicXmlConverterSourceDir, musicXmlConverterTargetDir, { recursive: true });
 await cp(guitarProConverterSourceDir, guitarProConverterTargetDir, { recursive: true });
 
@@ -83,6 +97,9 @@ console.log(`Synced parser from ${parserSourceDir} to ${parserTargetDir}.`);
 console.log(`Synced converters-ascii from ${converterSourceDir} to ${converterTargetDir}.`);
 console.log(
   `Synced converters-midi from ${midiConverterSourceDir} to ${midiConverterTargetDir}.`,
+);
+console.log(
+  `Synced converters-svg from ${svgConverterSourceDir} to ${svgConverterTargetDir}.`,
 );
 console.log(
   `Synced converters-musicxml from ${musicXmlConverterSourceDir} to ${musicXmlConverterTargetDir}.`,
