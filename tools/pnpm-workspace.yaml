@@ -8,4 +8,5 @@ packages:
   - "converters-midi"
   - "converters-musicxml"
   - "converters-guitarpro"
+  - "importers/ascii"
   - "opentab"
