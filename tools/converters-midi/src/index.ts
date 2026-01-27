@@ -209,7 +209,68 @@ function collectNotes(
   return events;
 }
 
-function buildTrackEvents(
+function buildMetaTrackEvents(
+  document: OpenTabDocument
+): MidiData["tracks"][number] {
+  const tempo = document.header.tempo_bpm ?? DEFAULT_TEMPO_BPM;
+  const timeSignature = normalizeTimeSignature(document.header.time_signature);
+  const metaEvents: MidiEvent[] = [
+    { tick: 0, type: "tempo" },
+    { tick: 0, type: "timeSignature" },
+  ];
+  const sortWeight = (event: MidiEvent) => {
+    if (event.type === "tempo" || event.type === "timeSignature") {
+      return 0;
+    }
+    return event.type === "noteOff" ? 1 : 2;
+  };
+
+  metaEvents.sort((a, b) => {
+    if (a.tick !== b.tick) {
+      return a.tick - b.tick;
+    }
+    return sortWeight(a) - sortWeight(b);
+  });
+
+  let lastTick = 0;
+  const trackEvents: MidiData["tracks"][number] = [];
+
+  for (const event of metaEvents) {
+    const deltaTime = event.tick - lastTick;
+    lastTick = event.tick;
+    if (event.type === "tempo") {
+      trackEvents.push({
+        deltaTime,
+        type: "setTempo",
+        meta: true,
+        microsecondsPerBeat: Math.round(60_000_000 / tempo),
+      });
+      continue;
+    }
+    if (event.type === "timeSignature") {
+      trackEvents.push({
+        deltaTime,
+        type: "timeSignature",
+        meta: true,
+        numerator: timeSignature.numerator,
+        denominator: timeSignature.denominator,
+        metronome: 24,
+        thirtyseconds: 8,
+      });
+      continue;
+    }
+  }
+
+  trackEvents.push({
+    deltaTime: 0,
+    type: "endOfTrack",
+    meta: true,
+  });
+
+  return trackEvents;
+}
+
+function buildSingleTrackEvents(
   document: OpenTabDocument,
   track: Track,
   channel: number
@@ -220,7 +281,6 @@ function buildTrackEvents(
     { tick: 0, type: "tempo" },
     { tick: 0, type: "timeSignature" },
   ];
-
   const noteEvents = collectNotes(document, track, channel);
   const combined = [...metaEvents, ...noteEvents];
   const sortWeight = (event: MidiEvent) => {
@@ -294,13 +354,75 @@ function buildTrackEvents(
   return trackEvents;
 }
 
-export function toMidi(document: OpenTabDocument): Uint8Array {
-  const tracks = document.tracks.map((track, index) =>
-    buildTrackEvents(document, track, index % 16)
-  );
+function buildNoteTrackEvents(
+  document: OpenTabDocument,
+  track: Track,
+  channel: number
+): MidiData["tracks"][number] {
+  const noteEvents = collectNotes(document, track, channel);
+  noteEvents.sort((a, b) => {
+    if (a.tick !== b.tick) {
+      return a.tick - b.tick;
+    }
+    return a.type === "noteOff" ? 0 : 1;
+  });
 
-  const format: MidiData["header"]["format"] =
-    tracks.length > 1 ? 1 : 0;
+  let lastTick = 0;
+  const trackEvents: MidiData["tracks"][number] = [];
+
+  for (const event of noteEvents) {
+    const deltaTime = event.tick - lastTick;
+    lastTick = event.tick;
+    if (event.type === "noteOn") {
+      trackEvents.push({
+        deltaTime,
+        type: "noteOn",
+        channel: event.channel,
+        noteNumber: event.noteNumber,
+        velocity: event.velocity,
+      });
+      continue;
+    }
+    if (event.type === "noteOff") {
+      trackEvents.push({
+        deltaTime,
+        type: "noteOff",
+        channel: event.channel,
+        noteNumber: event.noteNumber,
+        velocity: event.velocity,
+      });
+    }
+  }
+
+  trackEvents.push({
+    deltaTime: 0,
+    type: "endOfTrack",
+    meta: true,
+  });
+
+  return trackEvents;
+}
+
+export function toMidi(document: OpenTabDocument): Uint8Array {
+  let tracks: MidiData["tracks"];
+  let format: MidiData["header"]["format"];
+
+  if (document.tracks.length <= 1) {
+    const track = document.tracks[0];
+    if (track) {
+      tracks = [buildSingleTrackEvents(document, track, 0)];
+    } else {
+      tracks = [buildMetaTrackEvents(document)];
+    }
+    format = 0;
+  } else {
+    const metaTrack = buildMetaTrackEvents(document);
+    const noteTracks = document.tracks.map((track, index) =>
+      buildNoteTrackEvents(document, track, index % 16)
+    );
+    tracks = [metaTrack, ...noteTracks];
+    format = 1;
+  }
   const midiData: MidiData = {
     header: {
       format,
@@ -310,5 +432,5 @@ export function toMidi(document: OpenTabDocument): Uint8Array {
     tracks,
   };
 
-  return Uint8Array.from(writeMidi(midiData));
+  return Uint8Array.from(writeMidi(midiData, { useByte9ForNoteOff: true }));
 }
