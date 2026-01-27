@@ -43,7 +43,7 @@
   },
   "scripts": {
     "sync-language-service": "node ./scripts/sync-language-service.mjs",
-    "build": "npm run sync-language-service && tsup",
+    "build": "npm run sync-language-service && tsup && node ./scripts/copy-pdfkit-data.mjs",
     "watch": "npm run sync-language-service && tsup --watch",
     "test": "npm run sync-language-service && node ./tests/validator.test.js && node ./tests/smoke.test.js",
     "vscode:prepublish": "npm run build",
