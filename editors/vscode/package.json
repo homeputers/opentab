@@ -46,6 +46,7 @@
     "build": "npm run sync-language-service && tsup",
     "watch": "npm run sync-language-service && tsup --watch",
     "test": "npm run sync-language-service && node ./tests/validator.test.js && node ./tests/smoke.test.js",
+    "vscode:prepublish": "npm run build",
     "prepare:vsce": "npm run build",
     "vsce:package": "npm run prepare:vsce && npx vsce package",
     "vsce:publish": "npm run prepare:vsce && npx vsce publish"
