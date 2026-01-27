@@ -19,15 +19,14 @@ export default defineConfig({
   target: 'node16',
   outDir: 'dist',
   external: ['vscode'],
-  esbuildOptions(options) {
-    options.plugins ??= [];
-    options.plugins.push({
+  esbuildPlugins: [
+    {
       name: 'opentab-aliases',
       setup(build) {
         build.onResolve({ filter: /^@opentab\/formatter$/ }, () => ({
           path: formatterEntry,
         }));
       },
-    });
-  },
+    },
+  ],
 });
