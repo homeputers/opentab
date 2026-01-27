@@ -9,6 +9,7 @@ import { fromGpx } from './opentab-tools/converters-guitarpro/index.js';
 import { toMusicXml } from './opentab-tools/converters-musicxml/index.js';
 import { toMidi } from './opentab-tools/converters-midi/index.js';
 import { toSvgTab } from './opentab-tools/converters-svg/index.js';
+import { importAsciiTab } from './opentab-tools/importers-ascii/index.js';
 import { OpenTabParseError, parseOpenTab } from './opentab-tools/parser/index.js';
 import { hasPreviewPanel, showPreview, updatePreview } from './preview/previewPanel';
 
@@ -211,6 +212,50 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   );
 
+  const importAsciiCommand = vscode.commands.registerCommand(
+    'opentab.importAscii',
+    async () => {
+      const sourceUri = await promptForAsciiFile();
+      if (!sourceUri) {
+        return;
+      }
+
+      let converted = '';
+      let warnings: string[] = [];
+      try {
+        const fileBytes = await vscode.workspace.fs.readFile(sourceUri);
+        const source = Buffer.from(fileBytes).toString('utf8');
+        const result = importAsciiTab(source);
+        converted = result.otab;
+        warnings = result.warnings;
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : 'Failed to import ASCII tab.';
+        void vscode.window.showErrorMessage(`OpenTab: ${message}`);
+        return;
+      }
+
+      const targetUri = await getDefaultImportTargetUri(sourceUri);
+      if (!targetUri) {
+        return;
+      }
+
+      await vscode.workspace.fs.writeFile(
+        targetUri,
+        Buffer.from(converted, 'utf8'),
+      );
+      const document = await vscode.workspace.openTextDocument(targetUri);
+      await vscode.window.showTextDocument(document);
+      if (warnings.length > 0) {
+        void vscode.window.showWarningMessage(
+          `OpenTab: ASCII import complete with ${warnings.length} warning(s). ${formatImportWarnings(warnings)}`,
+        );
+      } else {
+        void vscode.window.showInformationMessage('OpenTab: ASCII import complete.');
+      }
+    },
+  );
+
   const changeDisposable = vscode.workspace.onDidChangeTextDocument((event) => {
     const editor = vscode.window.activeTextEditor;
     if (!editor || editor.document.uri.toString() !== event.document.uri.toString()) {
@@ -252,6 +297,7 @@ export function activate(context: vscode.ExtensionContext): void {
     printPdfCommand,
     playMidiCommand,
     importGuitarProCommand,
+    importAsciiCommand,
     changeDisposable,
     activeEditorDisposable,
   );
@@ -443,6 +489,18 @@ async function promptForGuitarProFile(): Promise<vscode.Uri | undefined> {
   return result?.[0];
 }
 
+async function promptForAsciiFile(): Promise<vscode.Uri | undefined> {
+  const options: vscode.OpenDialogOptions = {
+    canSelectMany: false,
+    openLabel: 'Import',
+    filters: {
+      'ASCII Tab': ['txt', 'tab'],
+    },
+  };
+  const result = await vscode.window.showOpenDialog(options);
+  return result?.[0];
+}
+
 async function getDefaultImportTargetUri(
   sourceUri: vscode.Uri,
 ): Promise<vscode.Uri | undefined> {
@@ -466,6 +524,15 @@ async function getDefaultImportTargetUri(
   }
 
   return targetUri;
+}
+
+function formatImportWarnings(warnings: string[]): string {
+  const previewCount = 3;
+  const displayed = warnings.slice(0, previewCount).join(' ');
+  if (warnings.length <= previewCount) {
+    return displayed;
+  }
+  return `${displayed} (+${warnings.length - previewCount} more)`;
 }
 
 export function deactivate(): void {}
