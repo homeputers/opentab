@@ -1,4 +1,10 @@
-import type { Duration, NoteRef, OpenTabDocument, Track } from "@opentab/ast";
+import type {
+  Duration,
+  NoteRef,
+  OpenTabDocument,
+  TimeSignature,
+  Track,
+} from "@opentab/ast";
 import { type MidiData, writeMidi } from "midi-file";
 
 export const packageName = "@opentab/converters-midi";
@@ -23,6 +29,25 @@ interface MidiMetaEvent {
 }
 
 type MidiEvent = MidiNoteEvent | MidiMetaEvent;
+
+function normalizeTimeSignature(
+  timeSignature?: TimeSignature
+): { numerator: number; denominator: number } {
+  if (!timeSignature) {
+    return { ...DEFAULT_TIME_SIGNATURE };
+  }
+  const numerator = Math.max(1, Math.floor(timeSignature.numerator));
+  const denominator = Math.floor(timeSignature.denominator);
+  const isPowerOfTwo =
+    denominator > 0 && (denominator & (denominator - 1)) === 0;
+  if (!isPowerOfTwo) {
+    return { ...DEFAULT_TIME_SIGNATURE };
+  }
+  return {
+    numerator,
+    denominator,
+  };
+}
 
 function durationToTicks(duration: Duration, ppq = PPQ): number {
   const baseTicks: Record<Duration["base"], number> = {
@@ -104,10 +129,10 @@ function collectNotes(
   channel: number
 ): MidiEvent[] {
   const events: MidiEvent[] = [];
-  const timeSignature = document.header.time_signature ?? DEFAULT_TIME_SIGNATURE;
+  const timeSignature = normalizeTimeSignature(document.header.time_signature);
   const beatsPerMeasure =
     timeSignature.numerator * (4 / timeSignature.denominator);
-  const expectedMeasureTicks = PPQ * beatsPerMeasure;
+  const expectedMeasureTicks = Math.max(1, Math.round(PPQ * beatsPerMeasure));
 
   let measureStart = 0;
   for (const measure of document.measures) {
@@ -190,7 +215,7 @@ function buildTrackEvents(
   channel: number
 ): MidiData["tracks"][number] {
   const tempo = document.header.tempo_bpm ?? DEFAULT_TEMPO_BPM;
-  const timeSignature = document.header.time_signature ?? DEFAULT_TIME_SIGNATURE;
+  const timeSignature = normalizeTimeSignature(document.header.time_signature);
   const metaEvents: MidiEvent[] = [
     { tick: 0, type: "tempo" },
     { tick: 0, type: "timeSignature" },
