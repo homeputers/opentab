@@ -2,7 +2,7 @@
   "name": "opentab-vscode",
   "displayName": "OpenTab Tablature Language",
   "description": "Syntax highlighting and formatting support for OpenTab tablature files.",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "publisher": "Homeputers",
   "icon": "icon.png",
   "keywords": [
