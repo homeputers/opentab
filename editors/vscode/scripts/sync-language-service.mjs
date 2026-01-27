@@ -94,6 +94,19 @@ const asciiImporterTargetDir = path.resolve(
   toolsTargetDir,
   'importers-ascii',
 );
+const formatterSourceDir = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'tools',
+  'formatter',
+  'src',
+);
+const formatterTargetDir = path.resolve(
+  toolsTargetDir,
+  'formatter',
+);
 
 await rm(targetDir, { recursive: true, force: true });
 await cp(sourceDir, targetDir, { recursive: true });
@@ -106,6 +119,7 @@ await cp(svgConverterSourceDir, svgConverterTargetDir, { recursive: true });
 await cp(musicXmlConverterSourceDir, musicXmlConverterTargetDir, { recursive: true });
 await cp(guitarProConverterSourceDir, guitarProConverterTargetDir, { recursive: true });
 await cp(asciiImporterSourceDir, asciiImporterTargetDir, { recursive: true });
+await cp(formatterSourceDir, formatterTargetDir, { recursive: true });
 
 console.log(`Synced language-service from ${sourceDir} to ${targetDir}.`);
 console.log(`Synced parser from ${parserSourceDir} to ${parserTargetDir}.`);
@@ -124,4 +138,7 @@ console.log(
 );
 console.log(
   `Synced importers-ascii from ${asciiImporterSourceDir} to ${asciiImporterTargetDir}.`,
+);
+console.log(
+  `Synced formatter from ${formatterSourceDir} to ${formatterTargetDir}.`,
 );
