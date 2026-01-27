@@ -138,7 +138,7 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!document) {
         return;
       }
-      await exportPdf(document);
+      await printPdf(document, context);
     },
   );
 
@@ -164,7 +164,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const midiUri = vscode.Uri.joinPath(tmpUri, fileName);
       await vscode.workspace.fs.writeFile(midiUri, midiBytes);
 
-      const opened = await openMidiExternal(midiUri.fsPath);
+      const opened = await openExternalFile(midiUri.fsPath);
       if (!opened) {
         void vscode.window.showWarningMessage(
           `OpenTab: Unable to open MIDI file. Saved at ${midiUri.fsPath}`,
@@ -225,7 +225,7 @@ export function activate(context: vscode.ExtensionContext): void {
       try {
         const fileBytes = await vscode.workspace.fs.readFile(sourceUri);
         const source = Buffer.from(fileBytes).toString('utf8');
-        const result = importAsciiTab(source);
+        const result = importAsciiTab(source, { rhythmStrategy: 'fixed-eighth' });
         converted = result.otab;
         warnings = result.warnings;
       } catch (error) {
@@ -373,6 +373,38 @@ async function exportPdf(document: vscode.TextDocument): Promise<void> {
   void vscode.window.showInformationMessage('OpenTab: PDF export saved.');
 }
 
+async function printPdf(
+  document: vscode.TextDocument,
+  context: vscode.ExtensionContext,
+): Promise<void> {
+  const parsed = parseActiveDocument(document);
+  if (!parsed) {
+    return;
+  }
+  const { svg, width, height } = toSvgTab(parsed);
+  const pdfBytes = await svgToPdfBytes(svg, width, height);
+  const storageUri = context.storageUri ?? context.globalStorageUri;
+  const tmpUri = vscode.Uri.joinPath(storageUri, 'tmp');
+  await vscode.workspace.fs.createDirectory(tmpUri);
+
+  const baseName = getDocumentBaseName(document);
+  const fileName = `${baseName}-print.pdf`;
+  const pdfUri = vscode.Uri.joinPath(tmpUri, fileName);
+  await vscode.workspace.fs.writeFile(pdfUri, pdfBytes);
+
+  const opened = await openExternalFile(pdfUri.fsPath);
+  if (!opened) {
+    void vscode.window.showWarningMessage(
+      `OpenTab: Unable to open PDF file. Saved at ${pdfUri.fsPath}`,
+    );
+    return;
+  }
+
+  void vscode.window.showInformationMessage(
+    `OpenTab: PDF ready to print. Saved at ${pdfUri.fsPath}`,
+  );
+}
+
 function getDocumentBaseName(document: vscode.TextDocument): string {
   const filePath = document.uri.scheme === 'file' ? document.uri.fsPath : undefined;
   return filePath ? path.parse(filePath).name : 'untitled';
@@ -408,7 +440,7 @@ async function promptForExportPath(
   });
 }
 
-async function openMidiExternal(filePath: string): Promise<boolean> {
+async function openExternalFile(filePath: string): Promise<boolean> {
   try {
     const opened = await vscode.env.openExternal(vscode.Uri.file(filePath));
     if (opened) {

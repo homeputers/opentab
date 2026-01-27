@@ -335,7 +335,7 @@ const scanMeasure = (
 
   for (let lineIndex = 0; lineIndex < padded.length; lineIndex += 1) {
     const line = padded[lineIndex];
-    const stringNumber = stringCount - lineIndex;
+    const stringNumber = lineIndex + 1;
     let column = 0;
 
     while (column < line.length) {
