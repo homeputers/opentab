@@ -209,10 +209,8 @@ function collectNotes(
   return events;
 }
 
-function buildTrackEvents(
-  document: OpenTabDocument,
-  track: Track,
-  channel: number
+function buildMetaTrackEvents(
+  document: OpenTabDocument
 ): MidiData["tracks"][number] {
   const tempo = document.header.tempo_bpm ?? DEFAULT_TEMPO_BPM;
   const timeSignature = normalizeTimeSignature(document.header.time_signature);
@@ -220,9 +218,6 @@ function buildTrackEvents(
     { tick: 0, type: "tempo" },
     { tick: 0, type: "timeSignature" },
   ];
-
-  const noteEvents = collectNotes(document, track, channel);
-  const combined = [...metaEvents, ...noteEvents];
   const sortWeight = (event: MidiEvent) => {
     if (event.type === "tempo" || event.type === "timeSignature") {
       return 0;
@@ -230,7 +225,7 @@ function buildTrackEvents(
     return event.type === "noteOff" ? 1 : 2;
   };
 
-  combined.sort((a, b) => {
+  metaEvents.sort((a, b) => {
     if (a.tick !== b.tick) {
       return a.tick - b.tick;
     }
@@ -240,7 +235,7 @@ function buildTrackEvents(
   let lastTick = 0;
   const trackEvents: MidiData["tracks"][number] = [];
 
-  for (const event of combined) {
+  for (const event of metaEvents) {
     const deltaTime = event.tick - lastTick;
     lastTick = event.tick;
     if (event.type === "tempo") {
@@ -264,6 +259,36 @@ function buildTrackEvents(
       });
       continue;
     }
+  }
+
+  trackEvents.push({
+    deltaTime: 0,
+    type: "endOfTrack",
+    meta: true,
+  });
+
+  return trackEvents;
+}
+
+function buildNoteTrackEvents(
+  document: OpenTabDocument,
+  track: Track,
+  channel: number
+): MidiData["tracks"][number] {
+  const noteEvents = collectNotes(document, track, channel);
+  noteEvents.sort((a, b) => {
+    if (a.tick !== b.tick) {
+      return a.tick - b.tick;
+    }
+    return a.type === "noteOff" ? 0 : 1;
+  });
+
+  let lastTick = 0;
+  const trackEvents: MidiData["tracks"][number] = [];
+
+  for (const event of noteEvents) {
+    const deltaTime = event.tick - lastTick;
+    lastTick = event.tick;
     if (event.type === "noteOn") {
       trackEvents.push({
         deltaTime,
@@ -295,12 +320,13 @@ function buildTrackEvents(
 }
 
 export function toMidi(document: OpenTabDocument): Uint8Array {
-  const tracks = document.tracks.map((track, index) =>
-    buildTrackEvents(document, track, index % 16)
+  const metaTrack = buildMetaTrackEvents(document);
+  const noteTracks = document.tracks.map((track, index) =>
+    buildNoteTrackEvents(document, track, index % 16)
   );
+  const tracks = [metaTrack, ...noteTracks];
 
-  const format: MidiData["header"]["format"] =
-    tracks.length > 1 ? 1 : 0;
+  const format: MidiData["header"]["format"] = 1;
   const midiData: MidiData = {
     header: {
       format,
