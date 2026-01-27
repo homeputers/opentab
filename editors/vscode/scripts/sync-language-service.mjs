@@ -80,6 +80,20 @@ const guitarProConverterTargetDir = path.resolve(
   toolsTargetDir,
   'converters-guitarpro',
 );
+const asciiImporterSourceDir = path.resolve(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  'tools',
+  'importers',
+  'ascii',
+  'src',
+);
+const asciiImporterTargetDir = path.resolve(
+  toolsTargetDir,
+  'importers-ascii',
+);
 
 await rm(targetDir, { recursive: true, force: true });
 await cp(sourceDir, targetDir, { recursive: true });
@@ -91,6 +105,7 @@ await cp(midiConverterSourceDir, midiConverterTargetDir, { recursive: true });
 await cp(svgConverterSourceDir, svgConverterTargetDir, { recursive: true });
 await cp(musicXmlConverterSourceDir, musicXmlConverterTargetDir, { recursive: true });
 await cp(guitarProConverterSourceDir, guitarProConverterTargetDir, { recursive: true });
+await cp(asciiImporterSourceDir, asciiImporterTargetDir, { recursive: true });
 
 console.log(`Synced language-service from ${sourceDir} to ${targetDir}.`);
 console.log(`Synced parser from ${parserSourceDir} to ${parserTargetDir}.`);
@@ -106,4 +121,7 @@ console.log(
 );
 console.log(
   `Synced converters-guitarpro from ${guitarProConverterSourceDir} to ${guitarProConverterTargetDir}.`,
+);
+console.log(
+  `Synced importers-ascii from ${asciiImporterSourceDir} to ${asciiImporterTargetDir}.`,
 );

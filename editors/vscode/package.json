@@ -88,6 +88,10 @@
       {
         "command": "opentab.importGuitarPro",
         "title": "OpenTab: Import Guitar Pro..."
+      },
+      {
+        "command": "opentab.importAscii",
+        "title": "OpenTab: Import ASCII..."
       }
     ],
     "languages": [
@@ -143,6 +147,10 @@
         {
           "command": "opentab.formatDocument",
           "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.importAscii",
+          "when": "resourceLangId == opentab"
         }
       ],
       "editor/context": [
@@ -176,6 +184,10 @@
         },
         {
           "command": "opentab.formatDocument",
+          "when": "resourceLangId == opentab"
+        },
+        {
+          "command": "opentab.importAscii",
           "when": "resourceLangId == opentab"
         }
       ]
