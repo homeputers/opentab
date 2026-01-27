@@ -432,5 +432,5 @@ export function toMidi(document: OpenTabDocument): Uint8Array {
     tracks,
   };
 
-  return Uint8Array.from(writeMidi(midiData));
+  return Uint8Array.from(writeMidi(midiData, { useByte9ForNoteOff: true }));
 }
