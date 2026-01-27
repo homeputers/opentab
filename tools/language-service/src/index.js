@@ -92,7 +92,7 @@ function validate(text) {
         searchStart = tokenIndex >= 0 ? endCol : searchStart;
 
         if (token.startsWith('(')) {
-          if (!/^\(\d+:\d+[^)]*\)$/.test(token)) {
+          if (!/^\(\d+:\d+[^)]*\)(\{[^}]*\})*$/.test(token)) {
             diagnostics.push({
               message: `Invalid note token: ${token}`,
               line: i,
