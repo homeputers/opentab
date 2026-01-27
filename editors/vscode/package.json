@@ -26,7 +26,17 @@
   },
   "main": "./dist/extension.js",
   "activationEvents": [
-    "onLanguage:opentab"
+    "onLanguage:opentab",
+    "onCommand:opentab.formatDocument",
+    "onCommand:opentab.preview",
+    "onCommand:opentab.exportAscii",
+    "onCommand:opentab.exportMidi",
+    "onCommand:opentab.exportMusicXml",
+    "onCommand:opentab.exportPdf",
+    "onCommand:opentab.printPdf",
+    "onCommand:opentab.playMidi",
+    "onCommand:opentab.importGuitarPro",
+    "onCommand:opentab.importAscii"
   ],
   "engines": {
     "vscode": "^1.75.0"
