@@ -18,6 +18,14 @@ export default defineConfig({
   platform: 'node',
   target: 'node16',
   outDir: 'dist',
+  skipNodeModulesBundle: false,
+  noExternal: [
+    'fast-xml-parser',
+    'jszip',
+    'midi-file',
+    'pdfkit',
+    'svg-to-pdfkit',
+  ],
   external: ['vscode'],
   esbuildPlugins: [
     {
